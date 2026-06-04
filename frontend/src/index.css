@@ -438,23 +438,81 @@ button, input, select {
 }
 
 .category-chip {
-  border: 1px solid var(--border);
-  background: #fff;
+  border: 1px solid rgba(26, 35, 50, 0.12);
   border-radius: 999px;
   padding: 0.35rem 0.85rem;
   font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
   color: var(--text);
+  transition: background 0.15s, box-shadow 0.15s, filter 0.15s;
 }
 
 .category-chip:hover {
-  border-color: var(--blue);
+  filter: brightness(1.05);
 }
 
-.category-chip.active {
+.category-chip.cat-all:not(.active) {
+  background: #fff;
+}
+.category-chip.cat-all.active {
   background: var(--blue);
   border-color: var(--blue);
   color: #fff;
+}
+
+.category-chip.cat-laundry:not(.active) {
+  background: color-mix(in srgb, var(--cat-laundry-fill) 40%, #fff);
+}
+.category-chip.cat-laundry.active {
+  background: var(--cat-laundry-fill);
+}
+
+.category-chip.cat-face:not(.active) {
+  background: color-mix(in srgb, var(--cat-face-fill) 40%, #fff);
+}
+.category-chip.cat-face.active {
+  background: var(--cat-face-fill);
+}
+
+.category-chip.cat-bath:not(.active) {
+  background: color-mix(in srgb, var(--cat-bath-fill) 40%, #fff);
+}
+.category-chip.cat-bath.active {
+  background: var(--cat-bath-fill);
+}
+
+.category-chip.cat-kitchen:not(.active) {
+  background: color-mix(in srgb, var(--cat-kitchen-fill) 40%, #fff);
+}
+.category-chip.cat-kitchen.active {
+  background: var(--cat-kitchen-fill);
+}
+
+.category-chip.cat-hand:not(.active) {
+  background: color-mix(in srgb, var(--cat-hand-fill) 40%, #fff);
+}
+.category-chip.cat-hand.active {
+  background: var(--cat-hand-fill);
+}
+
+.category-chip.cat-tooth:not(.active) {
+  background: color-mix(in srgb, var(--cat-tooth-fill) 40%, #fff);
+}
+.category-chip.cat-tooth.active {
+  background: var(--cat-tooth-fill);
+}
+
+.category-chip.cat-other:not(.active) {
+  background: color-mix(in srgb, var(--cat-other-fill) 40%, #fff);
+}
+.category-chip.cat-other.active {
+  background: var(--cat-other-fill);
+}
+
+.category-chip[class*="cat-"].active:not(.cat-all) {
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(26, 35, 50, 0.12);
 }
 
 .category-tag {

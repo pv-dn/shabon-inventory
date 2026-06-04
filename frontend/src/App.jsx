@@ -42,6 +42,11 @@ function categoryClass(category) {
   return CATEGORY_OPTIONS.some((c) => c.id === id) ? `cat-${id}` : "cat-other";
 }
 
+function categoryChipClass(categoryId) {
+  if (categoryId === "all") return "cat-all";
+  return categoryClass(categoryId);
+}
+
 function Toast({ message, error, onDone }) {
   useEffect(() => {
     const t = setTimeout(onDone, 3200);
@@ -667,7 +672,7 @@ export default function App() {
                 <button
                   key={c.id}
                   type="button"
-                  className={`category-chip ${categoryFilter === c.id ? "active" : ""}`}
+                  className={`category-chip ${categoryChipClass(c.id)} ${categoryFilter === c.id ? "active" : ""}`}
                   onClick={() => {
                     setCategoryFilter(c.id);
                     setSelectedProductId(null);
