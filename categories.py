@@ -70,7 +70,7 @@ def guess_category(name: str, code: str = "") -> str:
         return "hand"
     if "ベビー" in n:
         return "bath"
-    if "EM化粧" in n or "化粧せつけん" in n:
+    if "EM化粧" in n or "化粧石けん" in n or "化粧せつけん" in n:
         return "bath"
 
     if c.isdigit():
