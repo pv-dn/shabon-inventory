@@ -1,9 +1,10 @@
-"""品目ジャンル（洗濯・洗顔・お風呂・手洗い・歯磨き・その他）"""
+"""品目ジャンル（洗濯・洗顔・お風呂・台所・手洗い・歯磨き・その他）"""
 
 CATEGORIES = [
     ("laundry", "洗濯"),
     ("face", "洗顔"),
     ("bath", "お風呂"),
+    ("kitchen", "台所"),
     ("hand", "手洗い"),
     ("tooth", "歯磨き"),
     ("other", "その他"),
@@ -42,14 +43,14 @@ def guess_category(name: str, code: str = "") -> str:
     if "洗濯ギフト" in n or ("洗濯" in n and "ギフト" in n):
         return "laundry"
     if "台所ギフト" in n or "台所" in n or "食器" in n or "ふきふき" in n:
-        return "hand"
+        return "kitchen"
     if "浴用" in n or "ボデイ" in n or "ビューティー" in n or "バブルガード" in n or "全身ケア" in n:
         return "bath"
     if "ギフト" in n:
         if "洗濯" in n:
             return "laundry"
         if "台所" in n:
-            return "hand"
+            return "kitchen"
         return "bath"
     if "シャンプー" in n or "リンス" in n:
         return "bath"
@@ -65,7 +66,7 @@ def guess_category(name: str, code: str = "") -> str:
         )
     ):
         return "laundry"
-    if any(k in n for k in ("クレンサー", "重曹", "クエン酸", "台所用", "野菜")):
+    if any(k in n for k in ("クレンサー", "重曹", "クエン酸", "野菜")):
         return "hand"
     if "ベビー" in n:
         return "bath"
@@ -85,20 +86,22 @@ def guess_category(name: str, code: str = "") -> str:
         if c.startswith("150") or c.startswith("160"):
             return "laundry"
         if prefix2 in ("10", "11", "17"):
-            return "hand"
+            return "kitchen"
         if c == "2103":
             return "laundry"
         if c in ("2080", "2180", "2130", "1779"):
+            return "kitchen"
+        if c in ("2223", "2230"):
+            return "laundry"
+        if c in ("2245", "2250", "2260", "2270", "2271", "2272"):
             return "hand"
-        if c in ("2223", "2230", "2245", "2250", "2260", "2270", "2271", "2272"):
-            return "laundry" if c in ("2223", "2230") else "hand"
         if prefix2 == "24":
             return "bath"
         if prefix2 == "40":
             if "洗濯" in n:
                 return "laundry"
             if "台所" in n:
-                return "hand"
+                return "kitchen"
             return "bath"
         if prefix2 == "72":
             return "other"

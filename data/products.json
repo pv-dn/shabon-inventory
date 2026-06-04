@@ -393,7 +393,7 @@
     "case_qty": "24",
     "retail_price": null,
     "member_price": null,
-    "category": "hand"
+    "category": "kitchen"
   },
   {
     "code": "1091",
@@ -402,7 +402,7 @@
     "case_qty": "36",
     "retail_price": null,
     "member_price": null,
-    "category": "hand"
+    "category": "kitchen"
   },
   {
     "code": "1073",
@@ -411,7 +411,7 @@
     "case_qty": "6",
     "retail_price": null,
     "member_price": null,
-    "category": "hand"
+    "category": "kitchen"
   },
   {
     "code": "2180",
@@ -420,7 +420,7 @@
     "case_qty": "12×10",
     "retail_price": null,
     "member_price": null,
-    "category": "hand"
+    "category": "kitchen"
   },
   {
     "code": "1779",
@@ -429,7 +429,7 @@
     "case_qty": "20",
     "retail_price": null,
     "member_price": null,
-    "category": "hand"
+    "category": "kitchen"
   },
   {
     "code": "3510",
@@ -519,7 +519,7 @@
     "case_qty": "36",
     "retail_price": null,
     "member_price": null,
-    "category": "hand"
+    "category": "kitchen"
   },
   {
     "code": "1193",
@@ -528,7 +528,7 @@
     "case_qty": "6",
     "retail_price": null,
     "member_price": null,
-    "category": "hand"
+    "category": "kitchen"
   },
   {
     "code": "2860",
@@ -546,7 +546,7 @@
     "case_qty": "12×10",
     "retail_price": null,
     "member_price": null,
-    "category": "hand"
+    "category": "kitchen"
   },
   {
     "code": "3130",
@@ -699,7 +699,7 @@
     "case_qty": "20",
     "retail_price": null,
     "member_price": null,
-    "category": "hand"
+    "category": "kitchen"
   },
   {
     "code": "2271",
@@ -852,7 +852,7 @@
     "case_qty": "",
     "retail_price": null,
     "member_price": null,
-    "category": "hand"
+    "category": "kitchen"
   },
   {
     "code": "3141",

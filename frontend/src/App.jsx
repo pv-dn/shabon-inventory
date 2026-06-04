@@ -13,6 +13,7 @@ const CATEGORY_OPTIONS = [
   { id: "laundry", label: "洗濯" },
   { id: "face", label: "洗顔" },
   { id: "bath", label: "お風呂" },
+  { id: "kitchen", label: "台所" },
   { id: "hand", label: "手洗い" },
   { id: "tooth", label: "歯磨き" },
   { id: "other", label: "その他" },
