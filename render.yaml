@@ -15,7 +15,7 @@ services:
       - key: RENDER
         value: "true"
       - key: APP_PASSWORD
-        value: "ibhuEYqoQCdgeP"
+        value: "haizi814"
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
