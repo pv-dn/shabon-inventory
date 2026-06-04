@@ -6,6 +6,7 @@ from PIL import Image, ImageEnhance, ImageFilter
 
 APP_DIR = Path(__file__).resolve().parent.parent
 ASSETS_DIR = APP_DIR / "assets"
+PUBLIC_DIR = APP_DIR / "frontend" / "public"
 SOURCE = Path.home() / "OneDrive" / "Desktop" / "logo_1.png"
 OUTPUT_ICO = ASSETS_DIR / "app.ico"
 OUTPUT_PNG = ASSETS_DIR / "app-icon.png"
@@ -117,11 +118,34 @@ def save_ico(img: Image.Image, path: Path) -> None:
     )
 
 
-def main():
-    if not SOURCE.exists():
-        raise FileNotFoundError(f"元画像が見つかりません: {SOURCE}")
+def sync_public_icons(master: Image.Image) -> None:
+    """デスクトップ用 app.ico と同じ見た目を Web / PWA 用 public に反映"""
+    PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
+    master.save(OUTPUT_PNG, optimize=True)
+    save_ico(master, OUTPUT_ICO)
 
+    for size, name in ((192, "icon-192.png"), (512, "icon-512.png")):
+        master.resize((size, size), Image.Resampling.LANCZOS).save(
+            PUBLIC_DIR / name,
+            optimize=True,
+        )
+
+    import shutil
+
+    shutil.copy2(OUTPUT_ICO, PUBLIC_DIR / "favicon.ico")
+    shutil.copy2(OUTPUT_PNG, PUBLIC_DIR / "favicon.png")
+    print(f"同期: {PUBLIC_DIR}")
+
+
+def main():
     ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+    if not SOURCE.exists():
+        if OUTPUT_PNG.exists() and OUTPUT_ICO.exists():
+            master = Image.open(OUTPUT_PNG).convert("RGB")
+            sync_public_icons(master)
+            print(f"logo_1.png なし — 既存アイコンを public に同期: {PUBLIC_DIR}")
+            return
+        raise FileNotFoundError(f"元画像が見つかりません: {SOURCE}")
     img = Image.open(SOURCE)
     if img.mode == "P":
         img = img.convert("RGBA")
@@ -129,8 +153,7 @@ def main():
         img = img.convert("RGBA")
     character = extract_character(img)
     master = build_icon_master(character)
-    master.save(OUTPUT_PNG, optimize=True)
-    save_ico(master, OUTPUT_ICO)
+    sync_public_icons(master)
     print(f"背景色 RGB{BRAND_BLUE}")
     print(f"作成: {OUTPUT_ICO}")
     print(f"作成: {OUTPUT_PNG}")
