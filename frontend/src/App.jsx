@@ -37,6 +37,11 @@ function stockClass(p) {
   return "";
 }
 
+function categoryClass(category) {
+  const id = category || "other";
+  return CATEGORY_OPTIONS.some((c) => c.id === id) ? `cat-${id}` : "cat-other";
+}
+
 function Toast({ message, error, onDone }) {
   useEffect(() => {
     const t = setTimeout(onDone, 3200);
@@ -135,7 +140,7 @@ function ProductCard({ product, compact, selected, onSelect, onMove, onEdit, onD
   if (compact) {
     return (
       <article
-        className={`product-card compact ${stockClass(product)} ${selected ? "selected" : ""}`}
+        className={`product-card compact ${categoryClass(product.category)} ${stockClass(product)} ${selected ? "selected" : ""}`}
         onClick={() => onSelect(product.id)}
         onKeyDown={(e) => e.key === "Enter" && onSelect(product.id)}
         role="button"
@@ -157,7 +162,7 @@ function ProductCard({ product, compact, selected, onSelect, onMove, onEdit, onD
   }
 
   return (
-    <article className={`product-card ${stockClass(product)}`}>
+    <article className={`product-card ${categoryClass(product.category)} ${stockClass(product)}`}>
       <div className="card-code">
         {product.code}
         {product.category_label && (
