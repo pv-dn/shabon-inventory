@@ -107,7 +107,7 @@ def build_icon_master(character: Image.Image) -> Image.Image:
 
 
 def save_ico(img: Image.Image, path: Path) -> None:
-    sizes = [16, 24, 32, 48, 64, 128, 256]
+    sizes = [256, 128, 64, 48, 32, 24, 16]
     icons = [img.resize((s, s), Image.Resampling.LANCZOS) for s in sizes]
     icons[0].save(
         path,
