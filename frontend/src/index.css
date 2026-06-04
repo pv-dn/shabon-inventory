@@ -94,7 +94,12 @@ button, input, select {
   box-shadow: var(--shadow);
 }
 
-.login-card h1 { margin: 0 0 0.25rem; font-size: 1.35rem; }
+.login-card h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
 .login-card p { color: var(--muted); margin: 0 0 1.5rem; }
 .login-card label { display: block; margin-bottom: 1rem; font-size: 0.9rem; }
 .login-card input {
@@ -126,12 +131,7 @@ button, input, select {
 .header h1 {
   margin: 0;
   font-size: 1.35rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-}
-
-.login-card h1 {
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: 0.02em;
 }
 
