@@ -91,16 +91,56 @@ function LoginScreen({ onLogin }) {
   );
 }
 
-function ProductCard({ product, compact, expanded, onToggleExpand, onMove, onEdit, onDetail }) {
-  if (compact && !expanded) {
+function CompactDetailPanel({ product, onClose, onMove, onEdit, onDetail }) {
+  return (
+    <div className={`toolbar-detail ${stockClass(product)}`}>
+      <button type="button" className="toolbar-detail-close" onClick={onClose} aria-label="閉じる">
+        ×
+      </button>
+      <div className="toolbar-detail-inner">
+        <div className="toolbar-detail-info">
+          <span className="toolbar-detail-code">
+            {product.code}
+            {product.category_label && (
+              <span className="category-tag inline">{product.category_label}</span>
+            )}
+          </span>
+          <strong className="toolbar-detail-name">{product.name}</strong>
+          <span className="toolbar-detail-meta">
+            {product.spec || "—"}
+            {product.case_qty ? ` / ケース ${product.case_qty}` : ""}
+          </span>
+        </div>
+        <div className="toolbar-detail-stock">
+          {product.quantity}
+          <small>個</small>
+        </div>
+        <div className="toolbar-detail-actions">
+          <button type="button" className="btn small primary" onClick={() => onMove(product)}>
+            入出庫
+          </button>
+          <button type="button" className="btn small secondary" onClick={() => onEdit(product)}>
+            編集
+          </button>
+          <button type="button" className="btn small secondary" onClick={() => onDetail(product)}>
+            詳細
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductCard({ product, compact, selected, onSelect, onMove, onEdit, onDetail }) {
+  if (compact) {
     return (
       <article
-        className={`product-card compact ${stockClass(product)}`}
-        onClick={() => onToggleExpand(product.id)}
-        onKeyDown={(e) => e.key === "Enter" && onToggleExpand(product.id)}
+        className={`product-card compact ${stockClass(product)} ${selected ? "selected" : ""}`}
+        onClick={() => onSelect(product.id)}
+        onKeyDown={(e) => e.key === "Enter" && onSelect(product.id)}
         role="button"
         tabIndex={0}
-        title="クリックで詳細を表示"
+        title="クリックで上に詳細表示"
       >
         <div className="compact-name">
           {product.category_label && (
@@ -117,17 +157,7 @@ function ProductCard({ product, compact, expanded, onToggleExpand, onMove, onEdi
   }
 
   return (
-    <article className={`product-card ${stockClass(product)} ${compact ? "expanded" : ""}`}>
-      {compact && (
-        <button
-          type="button"
-          className="card-fold"
-          onClick={() => onToggleExpand(product.id)}
-          aria-label="畳む"
-        >
-          −
-        </button>
-      )}
+    <article className={`product-card ${stockClass(product)}`}>
       <div className="card-code">
         {product.code}
         {product.category_label && (
@@ -437,8 +467,13 @@ export default function App() {
   const [compactCards, setCompactCards] = useState(
     () => localStorage.getItem("shabon-compact-cards") !== "0"
   );
-  const [expandedCardId, setExpandedCardId] = useState(null);
+  const [selectedProductId, setSelectedProductId] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
+
+  const selectedProduct =
+    compactCards && selectedProductId
+      ? products.find((p) => p.id === selectedProductId) ?? null
+      : null;
 
   function toggleCompactCards() {
     setCompactCards((v) => {
@@ -446,11 +481,11 @@ export default function App() {
       localStorage.setItem("shabon-compact-cards", next ? "1" : "0");
       return next;
     });
-    setExpandedCardId(null);
+    setSelectedProductId(null);
   }
 
-  function toggleCardExpand(id) {
-    setExpandedCardId((cur) => (cur === id ? null : id));
+  function toggleProductSelect(id) {
+    setSelectedProductId((cur) => (cur === id ? null : id));
   }
 
   const showToast = useCallback((msg, error = false) => {
@@ -556,6 +591,7 @@ export default function App() {
                 setTab(t.id);
                 setSearch("");
                 setCategoryFilter("all");
+                setSelectedProductId(null);
               }}
             >
               {t.label}
@@ -565,45 +601,56 @@ export default function App() {
 
         <div className="panel">
           <div className="toolbar">
-            <input
-              type="search"
-              className="search"
-              placeholder={
-                tab === "history" ? "履歴を検索" : "コード・商品名・規格で検索"
-              }
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            {(tab === "stock" || tab === "active") && (
-              <button
-                type="button"
-                className={`btn secondary ${compactCards ? "active-toggle" : ""}`}
-                onClick={toggleCompactCards}
-              >
-                {compactCards ? "簡易表示 ON" : "簡易表示 OFF"}
-              </button>
-            )}
-            {tab === "stock" && (
-              <>
-                <button type="button" className="btn secondary" onClick={doImport}>
-                  Excel再取込
+            <div className="toolbar-left">
+              <input
+                type="search"
+                className="search"
+                placeholder={
+                  tab === "history" ? "履歴を検索" : "コード・商品名・規格で検索"
+                }
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {(tab === "stock" || tab === "active") && (
+                <button
+                  type="button"
+                  className={`btn secondary ${compactCards ? "active-toggle" : ""}`}
+                  onClick={toggleCompactCards}
+                >
+                  {compactCards ? "簡易表示 ON" : "簡易表示 OFF"}
                 </button>
-                <button type="button" className="btn secondary" onClick={loadData}>
-                  更新
+              )}
+              {tab === "stock" && (
+                <>
+                  <button type="button" className="btn secondary" onClick={doImport}>
+                    Excel再取込
+                  </button>
+                  <button type="button" className="btn secondary" onClick={loadData}>
+                    更新
+                  </button>
+                </>
+              )}
+              {tab === "products" && (
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => setModal({ type: "edit", product: null })}
+                >
+                  新規品目
                 </button>
-              </>
-            )}
-            {tab === "products" && (
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => setModal({ type: "edit", product: null })}
-              >
-                新規品目
-              </button>
-            )}
-            {tab === "active" && (
-              <span className="hint">入出庫の記録がある品目のみ</span>
+              )}
+              {tab === "active" && (
+                <span className="hint">入出庫の記録がある品目のみ</span>
+              )}
+            </div>
+            {compactCards && (tab === "stock" || tab === "active") && selectedProduct && (
+              <CompactDetailPanel
+                product={selectedProduct}
+                onClose={() => setSelectedProductId(null)}
+                onMove={(pr) => setModal({ type: "move", product: pr })}
+                onEdit={(pr) => setModal({ type: "edit", product: pr })}
+                onDetail={(pr) => setModal({ type: "detail", product: pr })}
+              />
             )}
           </div>
 
@@ -614,7 +661,10 @@ export default function App() {
                   key={c.id}
                   type="button"
                   className={`category-chip ${categoryFilter === c.id ? "active" : ""}`}
-                  onClick={() => setCategoryFilter(c.id)}
+                  onClick={() => {
+                    setCategoryFilter(c.id);
+                    setSelectedProductId(null);
+                  }}
                 >
                   {c.label}
                 </button>
@@ -713,8 +763,8 @@ export default function App() {
                       key={p.id}
                       product={p}
                       compact={compactCards}
-                      expanded={expandedCardId === p.id}
-                      onToggleExpand={toggleCardExpand}
+                      selected={selectedProductId === p.id}
+                      onSelect={toggleProductSelect}
                       onMove={(pr) => setModal({ type: "move", product: pr })}
                       onEdit={(pr) => setModal({ type: "edit", product: pr })}
                       onDetail={(pr) => setModal({ type: "detail", product: pr })}

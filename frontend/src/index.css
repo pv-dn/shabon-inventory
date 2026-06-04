@@ -183,7 +183,109 @@ button, input, select {
   gap: 0.75rem;
   margin-bottom: 1.25rem;
   flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.toolbar-left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   align-items: center;
+  flex: 0 1 auto;
+}
+
+.toolbar-detail {
+  flex: 1 1 320px;
+  min-width: 280px;
+  position: relative;
+  border-radius: var(--radius);
+  border: 2px solid var(--blue);
+  background: var(--blue-light);
+  padding: 0.65rem 2rem 0.65rem 0.85rem;
+  box-shadow: 0 2px 12px rgba(0, 159, 232, 0.12);
+}
+
+.toolbar-detail.low {
+  background: var(--low);
+  border-color: #e6b800;
+}
+
+.toolbar-detail.zero {
+  background: var(--zero);
+  border-color: #e88;
+}
+
+.toolbar-detail-close {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.toolbar-detail-close:hover {
+  color: var(--blue);
+  background: #fff;
+}
+
+.toolbar-detail-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.toolbar-detail-info {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.toolbar-detail-code {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+.toolbar-detail-name {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.toolbar-detail-meta {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 0.2rem;
+}
+
+.toolbar-detail-stock {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--blue);
+  white-space: nowrap;
+}
+
+.toolbar-detail-stock small {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.toolbar-detail-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
 .search {
@@ -231,6 +333,20 @@ button, input, select {
   border-color: var(--blue);
 }
 
+.product-card.compact.selected {
+  border-color: var(--blue);
+  background: var(--blue-light);
+  box-shadow: 0 0 0 2px rgba(0, 159, 232, 0.25);
+}
+
+.product-card.compact.selected.low {
+  background: #fff3d0;
+}
+
+.product-card.compact.selected.zero {
+  background: #ffe8e8;
+}
+
 .compact-name {
   flex: 1;
   font-size: 0.9rem;
@@ -255,32 +371,6 @@ button, input, select {
   font-size: 0.7rem;
   font-weight: 500;
   margin-left: 0.1rem;
-}
-
-.product-card.expanded {
-  grid-column: 1 / -1;
-  max-width: 100%;
-}
-
-.card-fold {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  width: 1.75rem;
-  height: 1.75rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: #fff;
-  color: var(--muted);
-  font-size: 1rem;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-}
-
-.card-fold:hover {
-  border-color: var(--blue);
-  color: var(--blue);
 }
 
 .btn.active-toggle {
