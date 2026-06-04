@@ -79,9 +79,38 @@ function LoginScreen({ onLogin }) {
   );
 }
 
-function ProductCard({ product, onMove, onEdit, onDetail }) {
+function ProductCard({ product, compact, expanded, onToggleExpand, onMove, onEdit, onDetail }) {
+  if (compact && !expanded) {
+    return (
+      <article
+        className={`product-card compact ${stockClass(product)}`}
+        onClick={() => onToggleExpand(product.id)}
+        onKeyDown={(e) => e.key === "Enter" && onToggleExpand(product.id)}
+        role="button"
+        tabIndex={0}
+        title="クリックで詳細を表示"
+      >
+        <div className="compact-name">{product.name}</div>
+        <div className="compact-qty">
+          {product.quantity}
+          <small>個</small>
+        </div>
+      </article>
+    );
+  }
+
   return (
-    <article className={`product-card ${stockClass(product)}`}>
+    <article className={`product-card ${stockClass(product)} ${compact ? "expanded" : ""}`}>
+      {compact && (
+        <button
+          type="button"
+          className="card-fold"
+          onClick={() => onToggleExpand(product.id)}
+          aria-label="畳む"
+        >
+          −
+        </button>
+      )}
       <div className="card-code">{product.code}</div>
       <div className="card-name">{product.name}</div>
       <div className="card-meta">
@@ -370,6 +399,23 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ msg: "", error: false });
   const [modal, setModal] = useState(null);
+  const [compactCards, setCompactCards] = useState(
+    () => localStorage.getItem("shabon-compact-cards") !== "0"
+  );
+  const [expandedCardId, setExpandedCardId] = useState(null);
+
+  function toggleCompactCards() {
+    setCompactCards((v) => {
+      const next = !v;
+      localStorage.setItem("shabon-compact-cards", next ? "1" : "0");
+      return next;
+    });
+    setExpandedCardId(null);
+  }
+
+  function toggleCardExpand(id) {
+    setExpandedCardId((cur) => (cur === id ? null : id));
+  }
 
   const showToast = useCallback((msg, error = false) => {
     setToast({ msg, error });
@@ -491,6 +537,15 @@ export default function App() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            {(tab === "stock" || tab === "active") && (
+              <button
+                type="button"
+                className={`btn secondary ${compactCards ? "active-toggle" : ""}`}
+                onClick={toggleCompactCards}
+              >
+                {compactCards ? "簡易表示 ON" : "簡易表示 OFF"}
+              </button>
+            )}
             {tab === "stock" && (
               <>
                 <button type="button" className="btn secondary" onClick={doImport}>
@@ -598,11 +653,14 @@ export default function App() {
               {products.length === 0 ? (
                 <p className="empty">該当する品目がありません</p>
               ) : (
-                <div className="card-grid">
+                <div className={`card-grid ${compactCards ? "card-grid-compact" : ""}`}>
                   {products.map((p) => (
                     <ProductCard
                       key={p.id}
                       product={p}
+                      compact={compactCards}
+                      expanded={expandedCardId === p.id}
+                      onToggleExpand={toggleCardExpand}
                       onMove={(pr) => setModal({ type: "move", product: pr })}
                       onEdit={(pr) => setModal({ type: "edit", product: pr })}
                       onDetail={(pr) => setModal({ type: "detail", product: pr })}
