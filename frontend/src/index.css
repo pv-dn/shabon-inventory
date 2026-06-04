@@ -13,7 +13,7 @@
   --zero: #ffefef;
   --shadow: 0 4px 20px rgba(26, 35, 50, 0.08);
   --radius: 12px;
-  --font: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+  --font: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Meiryo", sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -21,9 +21,11 @@
 body {
   margin: 0;
   font-family: var(--font);
+  font-weight: 400;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 #root { min-height: 100vh; }
@@ -121,7 +123,17 @@ button, input, select {
   flex-wrap: wrap;
 }
 
-.header h1 { margin: 0; font-size: 1.35rem; }
+.header h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.login-card h1 {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
 
 .chips { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .chip {
