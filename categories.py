@@ -1,4 +1,4 @@
-"""品目ジャンル（洗濯・洗顔・お風呂・手洗い・歯磨き）"""
+"""品目ジャンル（洗濯・洗顔・お風呂・手洗い・歯磨き・その他）"""
 
 CATEGORIES = [
     ("laundry", "洗濯"),
@@ -6,11 +6,12 @@ CATEGORIES = [
     ("bath", "お風呂"),
     ("hand", "手洗い"),
     ("tooth", "歯磨き"),
+    ("other", "その他"),
 ]
 
 CATEGORY_IDS = {c[0] for c in CATEGORIES}
 CATEGORY_LABELS = {c[0]: c[1] for c in CATEGORIES}
-DEFAULT_CATEGORY = "bath"
+DEFAULT_CATEGORY = "other"
 
 
 def category_label(category_id: str) -> str:
@@ -26,7 +27,13 @@ def guess_category(name: str, code: str = "") -> str:
     c = (code or "").strip()
 
     if not n or n in ("商品名", "商品コード 商品名"):
-        return DEFAULT_CATEGORY
+        return "other"
+    if any(k in n for k in ("タオル", "スタイ", "ミニボトル", "N-33")):
+        return "other"
+    if n in ("ささやかギフト", "温もりギフト") or (
+        "ギフト" in n and "洗濯" not in n and "台所" not in n and "ベビー" not in n and "シャボン" not in n
+    ):
+        return "other"
 
     if "ハミガキ" in n or "はみがき" in n:
         return "tooth"
@@ -60,8 +67,6 @@ def guess_category(name: str, code: str = "") -> str:
         return "laundry"
     if any(k in n for k in ("クレンサー", "重曹", "クエン酸", "台所用", "野菜")):
         return "hand"
-    if any(k in n for k in ("タオル", "スタイ", "ミニボトル", "N-33")):
-        return "bath"
     if "ベビー" in n:
         return "bath"
     if "EM化粧" in n or "化粧せつけん" in n:
@@ -96,6 +101,6 @@ def guess_category(name: str, code: str = "") -> str:
                 return "hand"
             return "bath"
         if prefix2 == "72":
-            return "bath"
+            return "other"
 
     return DEFAULT_CATEGORY

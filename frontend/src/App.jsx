@@ -15,6 +15,7 @@ const CATEGORY_OPTIONS = [
   { id: "bath", label: "お風呂" },
   { id: "hand", label: "手洗い" },
   { id: "tooth", label: "歯磨き" },
+  { id: "other", label: "その他" },
 ];
 
 const CATEGORY_FILTERS = [{ id: "all", label: "すべて" }, ...CATEGORY_OPTIONS];
@@ -233,7 +234,7 @@ function EditModal({ product, onClose, onSaved, toast }) {
     member_price: product?.member_price ?? "",
     min_stock: product?.min_stock || 0,
     note: product?.note || "",
-    category: product?.category || "bath",
+    category: product?.category || "other",
   });
   const [meta, setMeta] = useState("");
 

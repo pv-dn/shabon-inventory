@@ -84,9 +84,9 @@ def row_to_product(row):
         "quantity": row["quantity"],
         "min_stock": row["min_stock"] or 0,
         "note": row["note"] or "",
-        "category": row["category"] if "category" in row.keys() else "bath",
+        "category": row["category"] if "category" in row.keys() else "other",
         "category_label": category_label(
-            row["category"] if "category" in row.keys() else "bath"
+            row["category"] if "category" in row.keys() else "other"
         ),
         "updated_at": row["updated_at"],
         "movement_count": row["movement_count"] if "movement_count" in row.keys() else 0,
