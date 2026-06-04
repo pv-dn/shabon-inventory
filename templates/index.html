@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>しゃぼん玉せっけん 在庫管理</title>
+  <link rel="stylesheet" href="/static/style.css?v=20260604b">
+  <meta name="app-version" content="20260604b">
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <h1>しゃぼん玉せっけん 在庫管理</h1>
+      <div class="summary" id="summary"></div>
+      <span class="app-version" id="app-version"></span>
+      {% if show_logout %}<a href="/logout" class="logout-link">ログアウト</a>{% endif %}
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="stock" role="tab">在庫一覧</button>
+    <button class="tab" data-tab="active" role="tab">動きのある品目</button>
+    <button class="tab" data-tab="products" role="tab">品目編集</button>
+    <button class="tab" data-tab="history" role="tab">入出庫履歴</button>
+  </nav>
+
+  <main class="main">
+    <section id="panel-stock" class="panel active">
+      <div class="toolbar">
+        <input type="search" id="search-stock" placeholder="コード・商品名・規格で検索" class="search">
+        <button type="button" id="btn-import" class="btn secondary">Excelから再取込</button>
+        <button type="button" id="btn-refresh" class="btn secondary">更新</button>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="table-stock">
+          <thead>
+            <tr>
+              <th>コード</th>
+              <th>商品名</th>
+              <th>規格</th>
+              <th>ケース入数</th>
+              <th class="num">在庫</th>
+              <th class="num">下限</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="panel-active" class="panel">
+      <div class="toolbar">
+        <input type="search" id="search-active" placeholder="動きのある品目を検索" class="search">
+        <span class="hint">入庫・出庫・棚卸の記録がある品目だけ表示します</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="table-active">
+          <thead>
+            <tr>
+              <th>コード</th>
+              <th>商品名</th>
+              <th>規格</th>
+              <th class="num">在庫</th>
+              <th class="num">履歴件数</th>
+              <th>最終更新</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="panel-products" class="panel">
+      <div class="toolbar">
+        <input type="search" id="search-products" placeholder="品目を検索" class="search">
+        <button type="button" id="btn-new-product" class="btn primary">新規品目を追加</button>
+        <span class="hint">商品コード・名称・規格・価格などを編集できます</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="table-products">
+          <thead>
+            <tr>
+              <th>コード</th>
+              <th>商品名</th>
+              <th>規格</th>
+              <th>ケース入数</th>
+              <th class="num">一般価格</th>
+              <th class="num">会員価格</th>
+              <th class="num">在庫</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="panel-history" class="panel">
+      <div class="toolbar">
+        <input type="search" id="search-history" placeholder="履歴を検索" class="search">
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="table-history">
+          <thead>
+            <tr>
+              <th>日時</th>
+              <th>コード</th>
+              <th>商品名</th>
+              <th>種別</th>
+              <th class="num">数量</th>
+              <th class="num">変更前</th>
+              <th class="num">変更後</th>
+              <th>メモ</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="dialog-move" class="dialog">
+    <form id="form-move">
+      <h2 id="move-title">入出庫</h2>
+      <p class="product-label" id="move-product"></p>
+      <p class="current-qty">現在庫: <strong id="move-current">0</strong></p>
+      <label>
+        種別
+        <select name="type" id="move-type" required>
+          <option value="in">入庫</option>
+          <option value="out">出庫</option>
+          <option value="adjust">棚卸（在庫を直接指定）</option>
+        </select>
+      </label>
+      <label>
+        <span id="move-qty-label">数量</span>
+        <input type="number" name="quantity" id="move-quantity" min="1" value="1" required>
+      </label>
+      <label>
+        メモ
+        <input type="text" name="memo" id="move-memo" placeholder="例: 入荷、販売、見本市">
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="btn secondary" id="move-cancel">キャンセル</button>
+        <button type="submit" class="btn primary">登録</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialog-edit" class="dialog dialog-wide">
+    <form id="form-edit" onsubmit="return false">
+      <h2 id="edit-title">品目編集</h2>
+      <div class="form-grid">
+        <label>
+          商品コード <span class="required">*</span>
+          <input type="text" id="edit-code" required>
+        </label>
+        <label>
+          商品名 <span class="required">*</span>
+          <input type="text" id="edit-name" required>
+        </label>
+        <label>
+          規格
+          <input type="text" id="edit-spec">
+        </label>
+        <label>
+          ケース入数
+          <input type="text" id="edit-case-qty" placeholder="例: 12 / 10×12">
+        </label>
+        <label>
+          一般価格（税込）
+          <input type="number" id="edit-retail" min="0" placeholder="未設定">
+        </label>
+        <label>
+          会員価格
+          <input type="number" id="edit-member" min="0" placeholder="未設定">
+        </label>
+        <label>
+          補充下限
+          <input type="number" id="edit-min" min="0" value="0">
+        </label>
+        <label class="full">
+          メモ
+          <input type="text" id="edit-note">
+        </label>
+      </div>
+      <p class="edit-meta" id="edit-meta" hidden></p>
+      <div class="dialog-actions spread">
+        <button type="button" class="btn danger" id="edit-delete" hidden>品目を削除</button>
+        <div class="dialog-actions">
+          <button type="button" class="btn secondary" id="edit-cancel">キャンセル</button>
+          <button type="button" class="btn primary" id="edit-save">保存</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialog-detail" class="dialog dialog-wide">
+    <div id="detail-content"></div>
+    <div class="dialog-actions">
+      <button type="button" class="btn secondary" id="detail-close">閉じる</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="/static/app.js?v=20260604b"></script>
+</body>
+</html>

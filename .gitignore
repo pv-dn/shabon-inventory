@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+backups/
+*.db-journal
+data/inventory.db
+data_preview.json
+priced_sample.json
+price_samples.json
