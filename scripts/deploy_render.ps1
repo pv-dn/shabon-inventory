@@ -12,7 +12,11 @@ if ($LASTEXITCODE -ne 0) {
 
 $repoName = "shabon-inventory"
 $owner = (gh api user -q .login 2>$null)
-if (-not $owner) { throw "GitHub login failed" }
+if (-not $owner) {
+    $remote = git remote get-url origin 2>$null
+    if ($remote -match "github\.com[:/]([^/]+)/") { $owner = $Matches[1] }
+}
+if (-not $owner) { throw "GitHub login failed (run: gh auth login)" }
 
 Write-Host "Creating GitHub repo: $owner/$repoName"
 gh repo create $repoName --public --source=. --remote=origin --push 2>$null
