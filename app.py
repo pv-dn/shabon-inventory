@@ -1,10 +1,14 @@
 from datetime import datetime
+from pathlib import Path
 
-from flask import Flask, jsonify, make_response, redirect, render_template, request, session, url_for
+from flask import Flask, jsonify, request, send_from_directory, session
 
 from config import APP_PASSWORD, SECRET_KEY
 from database import get_connection, init_db, sync_products_from_json
 from db_compat import insert_returning_id
+
+APP_DIR = Path(__file__).parent
+FRONTEND_DIST = APP_DIR / "frontend" / "dist"
 
 app = Flask(__name__)
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
@@ -13,7 +17,7 @@ app.secret_key = SECRET_KEY
 
 @app.after_request
 def disable_static_cache(response):
-    if request.path.startswith("/static/"):
+    if request.path.startswith("/static/") or request.path.startswith("/assets/"):
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         response.headers["Pragma"] = "no-cache"
     return response
@@ -31,34 +35,40 @@ def ensure_db():
 def require_login():
     if not APP_PASSWORD:
         return
-    if request.path.startswith("/static/"):
-        return
-    if request.path in ("/login", "/api/health"):
-        return
     if session.get("authenticated"):
+        return
+    public_api = ("/api/health", "/api/login", "/api/me")
+    if request.path in public_api:
         return
     if request.path.startswith("/api/"):
         return jsonify({"error": "ログインが必要です"}), 401
-    return redirect(url_for("login_page", next=request.path))
 
 
-@app.route("/login", methods=["GET", "POST"])
-def login_page():
+@app.route("/api/me")
+def api_me():
+    return jsonify(
+        {
+            "authenticated": session.get("authenticated") or not APP_PASSWORD,
+            "password_required": bool(APP_PASSWORD),
+        }
+    )
+
+
+@app.route("/api/login", methods=["POST"])
+def api_login():
     if not APP_PASSWORD:
-        return redirect("/")
-    error = None
-    if request.method == "POST":
-        if request.form.get("password") == APP_PASSWORD:
-            session["authenticated"] = True
-            return redirect(request.args.get("next") or "/")
-        error = "パスワードが違います"
-    return render_template("login.html", error=error)
+        return jsonify({"ok": True})
+    data = request.get_json(force=True) or {}
+    if data.get("password") == APP_PASSWORD:
+        session["authenticated"] = True
+        return jsonify({"ok": True})
+    return jsonify({"error": "パスワードが違います"}), 401
 
 
-@app.route("/logout")
-def logout():
+@app.route("/api/logout", methods=["POST"])
+def api_logout():
     session.clear()
-    return redirect(url_for("login_page"))
+    return jsonify({"ok": True})
 
 
 def row_to_product(row):
@@ -140,12 +150,24 @@ def code_exists(conn, code, exclude_id=None):
     return conn.execute(sql, params).fetchone() is not None
 
 
-@app.route("/")
-def index():
-    resp = make_response(render_template("index.html", show_logout=bool(APP_PASSWORD)))
-    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    resp.headers["Pragma"] = "no-cache"
-    return resp
+def serve_react(path: str):
+    if not FRONTEND_DIST.exists():
+        return jsonify(
+            {
+                "error": "React build not found. Run: cd frontend && npm install && npm run build"
+            }
+        ), 503
+    if path and (FRONTEND_DIST / path).is_file():
+        return send_from_directory(FRONTEND_DIST, path)
+    return send_from_directory(FRONTEND_DIST, "index.html")
+
+
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def spa(path):
+    if path.startswith("api/") or path == "api":
+        return jsonify({"error": "Not found"}), 404
+    return serve_react(path)
 
 
 @app.route("/api/products")

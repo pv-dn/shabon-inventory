@@ -1,12 +1,12 @@
-# Render.com デプロイ設定
-# https://render.com で New > Blueprint からこのファイルを指定
+# Render.com - PC不要・固定URL（無料枠）
+# DATABASE_URL は Neon（無料DB）で作成して Render に登録
 
 services:
   - type: web
     name: shabon-inventory
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && cd frontend && (npm ci || npm install) && npm run build
     startCommand: python run.py
     healthCheckPath: /api/health
     envVars:
@@ -19,12 +19,4 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        fromDatabase:
-          name: shabon-inventory-db
-          property: connectionString
-
-databases:
-  - name: shabon-inventory-db
-    plan: basic
-    databaseName: shabon_inventory
-    user: shabon
+        sync: false

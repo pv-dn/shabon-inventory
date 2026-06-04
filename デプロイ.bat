@@ -1,42 +1,45 @@
 @echo off
 chcp 65001 >nul
 cd /d "%~dp0"
-title Deploy
+title Fixed URL Deploy (Render)
 
 echo.
 echo ========================================
-echo   Deploy - Choose method
+echo   Fixed URL deploy (NO PC server)
 echo ========================================
 echo.
-echo   [1] Render (recommended) - fixed URL for all stores
-echo       Requires GitHub login (browser opens)
+echo   Your PC does NOT need to stay on.
+echo   App runs on Render cloud 24/7.
 echo.
-echo   [2] Quick URL (Cloudflare) - works now, PC must stay on
+echo   Open guide: 固定URLで公開する手順.md
 echo.
-echo   [3] Local only (already installed)
+start "" "%~dp0固定URLで公開する手順.md"
 echo.
-set /p CHOICE=Select 1-3:
+echo   [1] Auto upload to GitHub (needs GitHub login in browser)
+echo   [2] Open Render dashboard
+echo   [3] Open Neon (free database)
+echo   [Q] Quit
+echo.
+set /p CHOICE=Select:
 
-if "%CHOICE%"=="1" goto render
-if "%CHOICE%"=="2" goto tunnel
-if "%CHOICE%"=="3" goto local
+if /i "%CHOICE%"=="1" goto github
+if /i "%CHOICE%"=="2" goto render
+if /i "%CHOICE%"=="3" goto neon
 goto end
 
-:render
+:github
 if not exist ".venv\Scripts\python.exe" call "%~dp0インストール.bat"
-git init 2>nul
 git add -A
-git commit -m "Deploy shabon inventory app" 2>nul
+git commit -m "React UI and cloud deploy config" 2>nul
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\deploy_render.ps1"
 goto end
 
-:tunnel
-if not exist ".venv\Scripts\python.exe" call "%~dp0インストール.bat"
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\deploy_cloudflare.ps1"
+:render
+start https://dashboard.render.com/blueprints
 goto end
 
-:local
-call "%~dp0起動.bat"
+:neon
+start https://neon.tech
 goto end
 
 :end

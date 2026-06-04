@@ -25,18 +25,19 @@ $password = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 14 | ForE
 $info = @"
 Render deploy next steps
 ======================
-1. Open https://render.com and sign in with GitHub
-2. New + > Blueprint
-3. Select repository: $owner/$repoName
-4. Set environment variable APP_PASSWORD = $password
-5. Apply and wait for deploy (~10 min)
-6. Share the Render URL + password with stores
+1. https://neon.tech → New Project → Connection string (postgresql://...) をコピー
+2. https://render.com → Sign in with GitHub
+3. New + → Blueprint → リポジトリ $owner/$repoName
+4. 環境変数:
+   APP_PASSWORD = $password
+   DATABASE_URL = (Neon の接続文字列)
+5. Apply → 5〜15 分待つ
+6. 画面上部の URL + パスワードを店舗に共有
 
-Password saved here: deploy-password.txt
+Repo: https://github.com/$owner/$repoName
 "@
 $info | Out-File (Join-Path $AppDir "deploy-password.txt") -Encoding utf8
-$password | Out-File (Join-Path $AppDir "deploy-password.txt") -Encoding utf8 -NoNewline
-Add-Content (Join-Path $AppDir "deploy-password.txt") "`n`nRepo: https://github.com/$owner/$repoName"
 
 Write-Host $info
+Start-Process "https://neon.tech"
 Start-Process "https://dashboard.render.com/blueprints"

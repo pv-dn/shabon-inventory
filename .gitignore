@@ -1,4 +1,10 @@
 .venv/
+frontend/node_modules/
+frontend/dist/
+deploy-password.txt
+publish-url.txt
+tunnel.log
+tunnel-err.log
 __pycache__/
 *.pyc
 backups/

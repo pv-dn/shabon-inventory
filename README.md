@@ -13,6 +13,7 @@
 
 - Windows 10 / 11
 - [Python 3.10 以降](https://www.python.org/downloads/)（インストール時に **Add python.exe to PATH** にチェック）
+- [Node.js LTS](https://nodejs.org/)（画面のビルド用・`インストール.bat` で自動ビルド）
 
 ---
 
@@ -39,15 +40,16 @@
 
 ---
 
-## 別店舗へ URL で共有する（クラウド）
+## 別店舗へ URL で共有する（固定URL・PC不要）
 
-複数店舗から同じ在庫を見る・更新する場合は、クラウドに公開します。
+**あなたのPCをサーバーにする必要はありません。**  
+Render（クラウド）に置けば、固定URLで全店舗が使えます。
 
-→ 詳しくは **`クラウド公開の手順.md`** を参照
+→ **`固定URLで公開する手順.md`** を開いてください（約30分・初回のみ）
 
-- 例: `https://あなたのアプリ.onrender.com`
-- パスワードで保護
-- 無料の Render.com で公開可能
+- 例: `https://shabon-inventory.onrender.com`
+- PCの電源は切ってOK
+- データはクラウド（Neon）に保存
 
 ---
 
@@ -104,7 +106,8 @@ shabon-inventory-app/
 ├── app.py                … Webアプリ
 ├── config.json           … 設定
 ├── data/                 … データベース
-├── static/ templates/    … 画面
+├── frontend/             … React 画面（Vite）
+├── static/ templates/    … 旧画面（参考用）
 └── .venv/                … Python環境（インストール後）
 ```
 
@@ -115,6 +118,7 @@ shabon-inventory-app/
 | 症状 | 対処 |
 |------|------|
 | 起動しない | `インストール.bat` を再実行 |
+| 画面が「ビルドされていません」 | Node.js を入れて `cd frontend` → `npm install` → `npm run build` |
 | 編集ボタンが効かない | ブラウザで **Ctrl+F5**、または `停止.bat` → `起動.bat` |
 | ポート使用中 | `停止.bat` を実行してから再起動 |
 | Excel取込 | デスクトップに価格一覧 xlsx を置き、アプリ内「Excelから再取込」 |
