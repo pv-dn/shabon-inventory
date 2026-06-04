@@ -1,5 +1,5 @@
 # Render.com - PC不要・固定URL（無料枠）
-# DATABASE_URL は Neon（無料DB）で作成して Render に登録
+# Blueprint Apply 時は APP_PASSWORD のみ入力（DBは自動接続）
 
 services:
   - type: web
@@ -19,4 +19,10 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: shabon-inventory-db
+          property: connectionString
+
+databases:
+  - name: shabon-inventory-db
+    plan: free

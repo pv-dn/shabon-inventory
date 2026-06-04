@@ -29,14 +29,11 @@ $password = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 14 | ForE
 $info = @"
 Render deploy next steps
 ======================
-1. https://neon.tech → New Project → Connection string (postgresql://...) をコピー
-2. https://render.com → Sign in with GitHub
-3. New + → Blueprint → リポジトリ $owner/$repoName
-4. 環境変数:
-   APP_PASSWORD = $password
-   DATABASE_URL = (Neon の接続文字列)
-5. Apply → 5〜15 分待つ
-6. 画面上部の URL + パスワードを店舗に共有
+1. https://render.com → Sign in with GitHub
+2. New + → Blueprint → リポジトリ $owner/$repoName
+3. APP_PASSWORD = $password のみ入力（DBは自動）
+4. Apply → 5〜15 分待つ
+5. URL https://shabon-inventory.onrender.com + パスワードを共有
 
 Repo: https://github.com/$owner/$repoName
 "@
