@@ -5,6 +5,7 @@ const TYPE_LABELS = { in: "入庫", out: "出庫", adjust: "棚卸" };
 const TABS = [
   { id: "stock", label: "在庫一覧" },
   { id: "active", label: "動きのある品目" },
+  { id: "ledger", label: "増減履歴" },
   { id: "products", label: "品目編集" },
   { id: "history", label: "入出庫履歴" },
 ];
@@ -29,6 +30,16 @@ function formatDate(iso) {
 function formatPrice(v) {
   if (v == null || v === "") return "—";
   return `${Number(v).toLocaleString()}円`;
+}
+
+function movementDelta(m) {
+  return m.after_qty - m.before_qty;
+}
+
+function formatDelta(delta) {
+  if (delta > 0) return `+${delta}`;
+  if (delta < 0) return String(delta);
+  return "±0";
 }
 
 function stockClass(p) {
@@ -387,6 +398,129 @@ function EditModal({ product, onClose, onSaved, toast }) {
   );
 }
 
+function MovementHistoryTable({ movements, showMemo = true }) {
+  if (movements.length === 0) {
+    return <p className="empty">この品目の増減履歴はまだありません</p>;
+  }
+
+  return (
+    <div className="table-wrap ledger-table-wrap">
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>日時</th>
+            <th>種別</th>
+            <th className="num">増減</th>
+            <th className="num">操作数</th>
+            <th className="num">在庫（前→後）</th>
+            {showMemo && <th>メモ</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {movements.map((m) => {
+            const delta = movementDelta(m);
+            return (
+              <tr key={m.id}>
+                <td>{formatDate(m.created_at)}</td>
+                <td>
+                  <span className={`badge badge-${m.type}`}>{TYPE_LABELS[m.type]}</span>
+                </td>
+                <td className={`num delta ${delta > 0 ? "plus" : delta < 0 ? "minus" : "zero"}`}>
+                  {formatDelta(delta)}
+                </td>
+                <td className="num">{m.quantity}</td>
+                <td className="num">
+                  {m.before_qty} → {m.after_qty}
+                </td>
+                {showMemo && <td>{m.memo || ""}</td>}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ProductHistoryCorner({
+  products,
+  selectedId,
+  onSelect,
+  movements,
+  loadingMovements,
+  onMove,
+  onDetail,
+}) {
+  const selected = products.find((p) => p.id === selectedId) ?? null;
+
+  return (
+    <div className="ledger-corner">
+      <aside className="ledger-list">
+        <p className="ledger-list-title">品目を選択</p>
+        {products.length === 0 ? (
+          <p className="empty ledger-list-empty">入出庫の記録がある品目がありません</p>
+        ) : (
+          <ul className="ledger-product-list">
+            {products.map((p) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  className={`ledger-product-item ${selectedId === p.id ? "active" : ""}`}
+                  onClick={() => onSelect(p.id)}
+                >
+                  <span className="ledger-product-code">{p.code}</span>
+                  <span className="ledger-product-name">{p.name}</span>
+                  <span className="ledger-product-meta">
+                    在庫 {p.quantity} ／ 履歴 {p.movement_count} 件
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </aside>
+
+      <section className="ledger-detail">
+        {!selected ? (
+          <p className="empty">左の一覧から品目を選ぶと、増減履歴が表示されます</p>
+        ) : (
+          <>
+            <header className="ledger-detail-header">
+              <div>
+                <span className="ledger-detail-code">{selected.code}</span>
+                <h2 className="ledger-detail-name">{selected.name}</h2>
+                <p className="ledger-detail-spec">
+                  {selected.spec || "—"}
+                  {selected.case_qty ? ` ／ ケース ${selected.case_qty}` : ""}
+                </p>
+              </div>
+              <div className="ledger-detail-stock">
+                <span className="ledger-detail-stock-label">現在庫</span>
+                <strong>{selected.quantity}</strong>
+                <small>個</small>
+              </div>
+              <div className="ledger-detail-actions">
+                <button type="button" className="btn small primary" onClick={() => onMove(selected)}>
+                  入出庫
+                </button>
+                <button type="button" className="btn small secondary" onClick={() => onDetail(selected)}>
+                  詳細
+                </button>
+              </div>
+            </header>
+            <h3 className="ledger-history-title">増減履歴（新しい順）</h3>
+            {loadingMovements ? (
+              <p className="panel-loading">履歴を読み込み中…</p>
+            ) : (
+              <MovementHistoryTable movements={movements} />
+            )}
+          </>
+        )}
+      </section>
+    </div>
+  );
+}
+
 function DetailModal({ product, onClose, onEdit }) {
   const [movements, setMovements] = useState([]);
 
@@ -423,37 +557,10 @@ function DetailModal({ product, onClose, onEdit }) {
         <button type="button" className="btn secondary" onClick={() => onEdit(product)}>
           品目を編集
         </button>
-        <h3 style={{ marginTop: "1.25rem" }}>入出庫履歴</h3>
-        {movements.length === 0 ? (
-          <p className="empty">履歴なし</p>
-        ) : (
-          <div className="table-wrap" style={{ maxHeight: "240px" }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>日時</th>
-                  <th>種別</th>
-                  <th className="num">数量</th>
-                  <th className="num">前→後</th>
-                </tr>
-              </thead>
-              <tbody>
-                {movements.map((m) => (
-                  <tr key={m.id}>
-                    <td>{formatDate(m.created_at)}</td>
-                    <td>
-                      <span className={`badge badge-${m.type}`}>{TYPE_LABELS[m.type]}</span>
-                    </td>
-                    <td className="num">{m.quantity}</td>
-                    <td className="num">
-                      {m.before_qty} → {m.after_qty}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <h3 style={{ marginTop: "1.25rem" }}>増減履歴</h3>
+        <div style={{ maxHeight: "280px" }}>
+          <MovementHistoryTable movements={movements} showMemo={false} />
+        </div>
         <div className="modal-actions">
           <button type="button" className="btn secondary" onClick={onClose}>
             閉じる
@@ -470,6 +577,9 @@ export default function App() {
   const [summary, setSummary] = useState(null);
   const [products, setProducts] = useState([]);
   const [movements, setMovements] = useState([]);
+  const [ledgerMovements, setLedgerMovements] = useState([]);
+  const [ledgerProductId, setLedgerProductId] = useState(null);
+  const [ledgerMovementsLoading, setLedgerMovementsLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ msg: "", error: false });
@@ -521,8 +631,21 @@ export default function App() {
       if (tab === "history") {
         setMovements(await api.movements(search));
       } else {
-        const activeOnly = tab === "active";
-        setProducts(await api.products(search, activeOnly, categoryFilter));
+        const activeOnly = tab === "active" || tab === "ledger";
+        const items = await api.products(search, activeOnly, categoryFilter);
+        setProducts(items);
+        if (tab === "ledger") {
+          const nextId =
+            ledgerProductId && items.some((p) => p.id === ledgerProductId)
+              ? ledgerProductId
+              : items[0]?.id ?? null;
+          setLedgerProductId(nextId);
+          if (nextId) {
+            setLedgerMovements(await api.productMovements(nextId));
+          } else {
+            setLedgerMovements([]);
+          }
+        }
       }
       await loadSummary();
     } catch (err) {
@@ -530,7 +653,7 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, [tab, search, categoryFilter, loadSummary, showToast]);
+  }, [tab, search, categoryFilter, ledgerProductId, loadSummary, showToast]);
 
   useEffect(() => {
     checkAuth();
@@ -546,6 +669,29 @@ export default function App() {
     }, 280);
     return () => clearTimeout(t);
   }, [search, auth, loadData]);
+
+  useEffect(() => {
+    if (!auth || tab !== "ledger" || !ledgerProductId) {
+      setLedgerMovements([]);
+      return;
+    }
+    let cancelled = false;
+    setLedgerMovementsLoading(true);
+    api
+      .productMovements(ledgerProductId)
+      .then((rows) => {
+        if (!cancelled) setLedgerMovements(rows);
+      })
+      .catch((err) => {
+        if (!cancelled) showToast(err.message, true);
+      })
+      .finally(() => {
+        if (!cancelled) setLedgerMovementsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [auth, tab, ledgerProductId, showToast]);
 
   async function doImport() {
     if (!confirm("デスクトップの価格一覧 Excel から再取込しますか？\n在庫・履歴は保持されます。")) return;
@@ -603,6 +749,7 @@ export default function App() {
                 setSearch("");
                 setCategoryFilter("all");
                 setSelectedProductId(null);
+                setLedgerProductId(null);
               }}
             >
               {t.label}
@@ -618,7 +765,11 @@ export default function App() {
                 type="search"
                 className="search"
                 placeholder={
-                  tab === "history" ? "履歴を検索" : "コード・商品名・規格で検索"
+                  tab === "history"
+                    ? "履歴を検索"
+                    : tab === "ledger"
+                      ? "増減履歴のある品目を検索"
+                      : "コード・商品名・規格で検索"
                 }
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -654,6 +805,9 @@ export default function App() {
               {tab === "active" && (
                 <span className="hint">入出庫の記録がある品目のみ</span>
               )}
+              {tab === "ledger" && (
+                <span className="hint">品目を選ぶと増減（＋／−）の履歴を表示します</span>
+              )}
             </div>
             {compactCards && (tab === "stock" || tab === "active") && selectedProduct && (
               <CompactDetailPanel
@@ -666,7 +820,7 @@ export default function App() {
             )}
           </div>
 
-          {(tab === "stock" || tab === "active" || tab === "products") && (
+          {(tab === "stock" || tab === "active" || tab === "products" || tab === "ledger") && (
             <div className="category-filters">
               {CATEGORY_FILTERS.map((c) => (
                 <button
@@ -688,6 +842,18 @@ export default function App() {
           </div>
 
           <div className="panel-scroll">
+          {!loading && tab === "ledger" && (
+            <ProductHistoryCorner
+              products={products}
+              selectedId={ledgerProductId}
+              onSelect={setLedgerProductId}
+              movements={ledgerMovements}
+              loadingMovements={ledgerMovementsLoading}
+              onMove={(pr) => setModal({ type: "move", product: pr })}
+              onDetail={(pr) => setModal({ type: "detail", product: pr })}
+            />
+          )}
+
           {!loading && tab === "history" && (
             <div className="table-wrap">
               {movements.length === 0 ? (
@@ -700,27 +866,34 @@ export default function App() {
                       <th>コード</th>
                       <th>商品名</th>
                       <th>種別</th>
-                      <th className="num">数量</th>
+                      <th className="num">増減</th>
+                      <th className="num">操作数</th>
                       <th className="num">前</th>
                       <th className="num">後</th>
                       <th>メモ</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {movements.map((m) => (
-                      <tr key={m.id}>
-                        <td>{formatDate(m.created_at)}</td>
-                        <td>{m.code}</td>
-                        <td>{m.name}</td>
-                        <td>
-                          <span className={`badge badge-${m.type}`}>{TYPE_LABELS[m.type]}</span>
-                        </td>
-                        <td className="num">{m.quantity}</td>
-                        <td className="num">{m.before_qty}</td>
-                        <td className="num">{m.after_qty}</td>
-                        <td>{m.memo || ""}</td>
-                      </tr>
-                    ))}
+                    {movements.map((m) => {
+                      const delta = movementDelta(m);
+                      return (
+                        <tr key={m.id}>
+                          <td>{formatDate(m.created_at)}</td>
+                          <td>{m.code}</td>
+                          <td>{m.name}</td>
+                          <td>
+                            <span className={`badge badge-${m.type}`}>{TYPE_LABELS[m.type]}</span>
+                          </td>
+                          <td className={`num delta ${delta > 0 ? "plus" : delta < 0 ? "minus" : "zero"}`}>
+                            {formatDelta(delta)}
+                          </td>
+                          <td className="num">{m.quantity}</td>
+                          <td className="num">{m.before_qty}</td>
+                          <td className="num">{m.after_qty}</td>
+                          <td>{m.memo || ""}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
