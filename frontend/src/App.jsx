@@ -68,7 +68,7 @@ function LoginScreen({ onLogin }) {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1>シャボン玉石けん</h1>
+        <h1 className="brand-title">シャボン玉石けん</h1>
         <p>在庫管理にログイン</p>
         {error && <p className="login-error">{error}</p>}
         <form onSubmit={submit}>
@@ -565,7 +565,7 @@ export default function App() {
     <>
       <header className="header">
         <div className="header-inner">
-          <h1>シャボン玉石けん 在庫管理</h1>
+          <h1 className="brand-title">シャボン玉石けん 在庫管理</h1>
           {summary && (
             <div className="chips">
               <span className="chip">登録 {summary.total}</span>

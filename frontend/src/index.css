@@ -94,11 +94,16 @@ button, input, select {
   box-shadow: var(--shadow);
 }
 
+.brand-title {
+  font-family: "M PLUS Rounded 1c", "Zen Maru Gothic", "Hiragino Maru Gothic ProN", sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
 .login-card h1 {
   margin: 0 0 0.25rem;
-  font-size: 1.35rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: 1.4rem;
 }
 .login-card p { color: var(--muted); margin: 0 0 1.5rem; }
 .login-card label { display: block; margin-bottom: 1rem; font-size: 0.9rem; }
@@ -130,9 +135,7 @@ button, input, select {
 
 .header h1 {
   margin: 0;
-  font-size: 1.35rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: 1.4rem;
 }
 
 .chips { display: flex; gap: 0.5rem; flex-wrap: wrap; }
