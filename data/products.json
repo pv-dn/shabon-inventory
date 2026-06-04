@@ -5,7 +5,8 @@
     "spec": "１００ｇ",
     "case_qty": "10×12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3112",
@@ -13,7 +14,8 @@
     "spec": "3個入",
     "case_qty": "40",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3113",
@@ -21,7 +23,8 @@
     "spec": "6個入",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3115",
@@ -29,7 +32,8 @@
     "spec": "12個入",
     "case_qty": "10",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3109",
@@ -37,7 +41,8 @@
     "spec": "155g  （バスサイズ）",
     "case_qty": "60",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3410",
@@ -45,7 +50,8 @@
     "spec": "１００ｇ",
     "case_qty": "10×12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3419",
@@ -53,7 +59,8 @@
     "spec": "155g  （バスサイズ）",
     "case_qty": "60",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3412",
@@ -61,7 +68,8 @@
     "spec": "3個入",
     "case_qty": "40",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3105",
@@ -69,7 +77,8 @@
     "spec": "１００ｇ",
     "case_qty": "10×12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3106",
@@ -77,7 +86,8 @@
     "spec": "3個入",
     "case_qty": "40",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3200",
@@ -85,7 +95,8 @@
     "spec": "570ml",
     "case_qty": "12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3201",
@@ -93,7 +104,8 @@
     "spec": "470ml",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3225",
@@ -101,7 +113,8 @@
     "spec": "570ml",
     "case_qty": "12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3226",
@@ -109,7 +122,8 @@
     "spec": "470ml",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3227",
@@ -117,7 +131,8 @@
     "spec": "4L",
     "case_qty": "4",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3190",
@@ -125,7 +140,8 @@
     "spec": "300ml",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "face"
   },
   {
     "code": "3191",
@@ -133,7 +149,8 @@
     "spec": "250ml",
     "case_qty": "36",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "face"
   },
   {
     "code": "1215",
@@ -141,7 +158,8 @@
     "spec": "１．５ｋｇ",
     "case_qty": "8",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "3153",
@@ -149,7 +167,8 @@
     "spec": "７０ｇ",
     "case_qty": "30",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "face"
   },
   {
     "code": "3154",
@@ -157,7 +176,8 @@
     "spec": "７０ｇ",
     "case_qty": "30",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "face"
   },
   {
     "code": "3325",
@@ -165,7 +185,8 @@
     "spec": "520ml",
     "case_qty": "12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3326",
@@ -173,7 +194,8 @@
     "spec": "420ml",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "2430",
@@ -181,7 +203,8 @@
     "spec": "520ml",
     "case_qty": "12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "2431",
@@ -189,7 +212,8 @@
     "spec": "420ml",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3192",
@@ -197,7 +221,8 @@
     "spec": "520ml",
     "case_qty": "12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3193",
@@ -205,7 +230,8 @@
     "spec": "420ml",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3300",
@@ -213,7 +239,8 @@
     "spec": "１００ｇ",
     "case_qty": "30",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3301",
@@ -221,7 +248,8 @@
     "spec": "１００ｇ",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "2400",
@@ -229,7 +257,8 @@
     "spec": "１５０ｇ",
     "case_qty": "30",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "2401",
@@ -237,7 +266,8 @@
     "spec": "１５０ｇ",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "2841",
@@ -245,7 +275,8 @@
     "spec": "４０ｇ",
     "case_qty": "150",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "tooth"
   },
   {
     "code": "2870",
@@ -253,7 +284,8 @@
     "spec": "８０ｇ",
     "case_qty": "60",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "tooth"
   },
   {
     "code": "2890",
@@ -261,7 +293,8 @@
     "spec": "５０ｇ",
     "case_qty": "60",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "tooth"
   },
   {
     "code": "3207",
@@ -269,7 +302,8 @@
     "spec": "１００ｇ",
     "case_qty": "100",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3257",
@@ -277,7 +311,8 @@
     "spec": "450m I",
     "case_qty": "12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3258",
@@ -285,7 +320,8 @@
     "spec": "400m I",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "1608",
@@ -293,7 +329,8 @@
     "spec": "75ml",
     "case_qty": "160",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "3328",
@@ -301,7 +338,8 @@
     "spec": "15ml",
     "case_qty": "320",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3380",
@@ -309,7 +347,8 @@
     "spec": "300ml",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3383",
@@ -317,7 +356,8 @@
     "spec": "500ml",
     "case_qty": "12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3381",
@@ -325,7 +365,8 @@
     "spec": "250ml",
     "case_qty": "36",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3388",
@@ -333,7 +374,8 @@
     "spec": "50ml",
     "case_qty": "30",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "商品コード",
@@ -341,7 +383,8 @@
     "spec": "規格",
     "case_qty": "ケース\n入数",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "1090",
@@ -349,7 +392,8 @@
     "spec": "300ml",
     "case_qty": "24",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "1091",
@@ -357,7 +401,8 @@
     "spec": "275ml",
     "case_qty": "36",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "1073",
@@ -365,7 +410,8 @@
     "spec": "2.1L",
     "case_qty": "6",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "2180",
@@ -373,7 +419,8 @@
     "spec": "110g",
     "case_qty": "12×10",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "1779",
@@ -381,7 +428,8 @@
     "spec": "500g",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "3510",
@@ -389,7 +437,8 @@
     "spec": "520ml",
     "case_qty": "12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3511",
@@ -397,7 +446,8 @@
     "spec": "420ml",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "2440",
@@ -405,7 +455,8 @@
     "spec": "520ml",
     "case_qty": "12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "2441",
@@ -413,7 +464,8 @@
     "spec": "420m",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "1501",
@@ -421,7 +473,8 @@
     "spec": "1200ml",
     "case_qty": "10",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "1502",
@@ -429,7 +482,8 @@
     "spec": "1000ml",
     "case_qty": "12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "1504",
@@ -437,7 +491,8 @@
     "spec": "5L",
     "case_qty": "3",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "3520",
@@ -445,7 +500,8 @@
     "spec": "520ml",
     "case_qty": "12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3521",
@@ -453,7 +509,8 @@
     "spec": "420m",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "1191",
@@ -461,7 +518,8 @@
     "spec": "250ml",
     "case_qty": "36",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "1193",
@@ -469,7 +527,8 @@
     "spec": "2.1L",
     "case_qty": "6",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "2860",
@@ -477,7 +536,8 @@
     "spec": "140g",
     "case_qty": "10×6",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "tooth"
   },
   {
     "code": "2130",
@@ -485,7 +545,8 @@
     "spec": "110g",
     "case_qty": "12×10",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "3130",
@@ -493,7 +554,8 @@
     "spec": "100g",
     "case_qty": "10×12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "72002",
@@ -501,7 +563,8 @@
     "spec": "-",
     "case_qty": "-",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "72022",
@@ -509,7 +572,8 @@
     "spec": "-",
     "case_qty": "-",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "72041",
@@ -517,7 +581,8 @@
     "spec": "-",
     "case_qty": "-",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "72061",
@@ -525,7 +590,8 @@
     "spec": "-",
     "case_qty": "-",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "72081",
@@ -533,7 +599,8 @@
     "spec": "-",
     "case_qty": "-",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "73151",
@@ -541,7 +608,8 @@
     "spec": "-",
     "case_qty": "-",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "2103",
@@ -549,7 +617,8 @@
     "spec": "180g",
     "case_qty": "60",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "2230",
@@ -557,7 +626,8 @@
     "spec": "500g",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "2432",
@@ -565,7 +635,8 @@
     "spec": "15ml",
     "case_qty": "320",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "3237",
@@ -573,7 +644,8 @@
     "spec": "15ml",
     "case_qty": "320",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "2080",
@@ -581,7 +653,8 @@
     "spec": "160g",
     "case_qty": "30",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "2250",
@@ -589,7 +662,8 @@
     "spec": "300g",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "2223",
@@ -597,7 +671,8 @@
     "spec": "750g",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "2245",
@@ -605,7 +680,8 @@
     "spec": "680g",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "2260",
@@ -613,7 +689,8 @@
     "spec": "200g",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "2270",
@@ -621,7 +698,8 @@
     "spec": "300ml",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "2271",
@@ -629,7 +707,8 @@
     "spec": "250ml",
     "case_qty": "30",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "2272",
@@ -637,7 +716,8 @@
     "spec": "2.1L",
     "case_qty": "6",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "1615",
@@ -645,7 +725,8 @@
     "spec": "1000ml",
     "case_qty": "12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "1616",
@@ -653,7 +734,8 @@
     "spec": "800ml",
     "case_qty": "12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "1008",
@@ -661,7 +743,8 @@
     "spec": "1.5kg",
     "case_qty": "8",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "1550",
@@ -669,7 +752,8 @@
     "spec": "800mｌ",
     "case_qty": "12",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "1551",
@@ -677,7 +761,8 @@
     "spec": "650mI",
     "case_qty": "20",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "商品コード",
@@ -685,7 +770,8 @@
     "spec": "規格",
     "case_qty": "ケース\n入数",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "4100",
@@ -693,7 +779,8 @@
     "spec": "－",
     "case_qty": "",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "4101",
@@ -701,7 +788,8 @@
     "spec": "－",
     "case_qty": "",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "4046",
@@ -709,7 +797,8 @@
     "spec": "－",
     "case_qty": "",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "4049",
@@ -717,7 +806,8 @@
     "spec": "－",
     "case_qty": "",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "4022",
@@ -725,7 +815,8 @@
     "spec": "－",
     "case_qty": "",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "4023",
@@ -733,7 +824,8 @@
     "spec": "－",
     "case_qty": "",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "4024",
@@ -741,7 +833,8 @@
     "spec": "－",
     "case_qty": "",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   },
   {
     "code": "4102",
@@ -749,7 +842,8 @@
     "spec": "－",
     "case_qty": "",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "laundry"
   },
   {
     "code": "4103",
@@ -757,7 +851,8 @@
     "spec": "－",
     "case_qty": "",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "hand"
   },
   {
     "code": "3141",
@@ -765,6 +860,7 @@
     "spec": "－",
     "case_qty": "",
     "retail_price": null,
-    "member_price": null
+    "member_price": null,
+    "category": "bath"
   }
 ]

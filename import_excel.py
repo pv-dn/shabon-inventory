@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from categories import guess_category
+
 APP_DIR = Path(__file__).parent
 DATA_DIR = APP_DIR / "data"
 PRODUCTS_JSON = DATA_DIR / "products.json"
@@ -76,6 +78,7 @@ def parse_excel(excel_path: Path) -> list[dict]:
                 "case_qty": case_qty,
                 "retail_price": to_price(row.get("一般価格\n（税込）")),
                 "member_price": to_price(row.get("会員価格")),
+                "category": guess_category(display_name, code),
             }
         )
     return products

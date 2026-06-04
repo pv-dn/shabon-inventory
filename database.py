@@ -1,7 +1,9 @@
 import json
+import sqlite3
 from datetime import datetime
 from pathlib import Path
 
+from categories import DEFAULT_CATEGORY, guess_category, is_valid_category
 from db_compat import USE_POSTGRES, get_connection
 
 APP_DIR = Path(__file__).parent
@@ -21,6 +23,7 @@ CREATE TABLE IF NOT EXISTS products (
     quantity INTEGER NOT NULL DEFAULT 0,
     min_stock INTEGER DEFAULT 0,
     note TEXT,
+    category TEXT NOT NULL DEFAULT 'bath',
     updated_at TEXT
 );
 
@@ -52,6 +55,7 @@ CREATE TABLE IF NOT EXISTS products (
     quantity INTEGER NOT NULL DEFAULT 0,
     min_stock INTEGER DEFAULT 0,
     note TEXT,
+    category TEXT NOT NULL DEFAULT 'bath',
     updated_at TEXT
 );
 
@@ -71,6 +75,42 @@ CREATE INDEX IF NOT EXISTS idx_movements_created ON movements(created_at);
 """
 
 
+def backfill_categories(conn):
+    rows = conn.execute("SELECT id, code, name FROM products").fetchall()
+    for row in rows:
+        cat = guess_category(row["name"], row["code"])
+        conn.execute("UPDATE products SET category = ? WHERE id = ?", (cat, row["id"]))
+
+
+def migrate_add_category(conn):
+    added = False
+    if USE_POSTGRES:
+        cur = conn._conn.cursor()
+        cur.execute(
+            """
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'products' AND column_name = 'category'
+            """
+        )
+        if not cur.fetchone():
+            conn.execute(
+                "ALTER TABLE products ADD COLUMN category TEXT NOT NULL DEFAULT 'bath'"
+            )
+            added = True
+        cur.close()
+    else:
+        try:
+            conn.execute(
+                "ALTER TABLE products ADD COLUMN category TEXT NOT NULL DEFAULT 'bath'"
+            )
+            added = True
+        except sqlite3.OperationalError:
+            pass
+    if added:
+        backfill_categories(conn)
+    conn.commit()
+
+
 def init_db():
     conn = get_connection()
     schema = POSTGRES_SCHEMA if USE_POSTGRES else SQLITE_SCHEMA
@@ -78,8 +118,15 @@ def init_db():
         stmt = stmt.strip()
         if stmt:
             conn.execute(stmt)
-    conn.commit()
+    migrate_add_category(conn)
     conn.close()
+
+
+def resolve_category(item: dict) -> str:
+    raw = (item.get("category") or "").strip()
+    if is_valid_category(raw):
+        return raw
+    return guess_category(item.get("name", ""), item.get("code", ""))
 
 
 def load_products_from_json():
@@ -111,11 +158,12 @@ def sync_products_from_json():
                 retail_price = row["retail_price"]
             if member_price is None:
                 member_price = row["member_price"]
+            cat = resolve_category(item)
             conn.execute(
                 """
                 UPDATE products
                 SET name = ?, spec = ?, case_qty = ?,
-                    retail_price = ?, member_price = ?, updated_at = ?
+                    retail_price = ?, member_price = ?, category = ?, updated_at = ?
                 WHERE code = ?
                 """,
                 (
@@ -124,15 +172,18 @@ def sync_products_from_json():
                     item.get("case_qty", ""),
                     retail_price,
                     member_price,
+                    cat,
                     now,
                     item["code"],
                 ),
             )
         else:
+            cat = resolve_category(item)
             conn.execute(
                 """
-                INSERT INTO products (code, name, spec, case_qty, retail_price, member_price, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO products (
+                    code, name, spec, case_qty, retail_price, member_price, category, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     item["code"],
@@ -141,6 +192,7 @@ def sync_products_from_json():
                     item.get("case_qty", ""),
                     item.get("retail_price"),
                     item.get("member_price"),
+                    cat,
                     now,
                 ),
             )

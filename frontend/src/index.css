@@ -276,6 +276,56 @@ button, input, select {
   border-color: var(--blue);
   color: var(--blue);
 }
+
+.category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.category-chip {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.category-chip:hover {
+  border-color: var(--blue);
+}
+
+.category-chip.active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+.category-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--blue);
+  background: var(--blue-light);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
+.category-tag.inline {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+.compact-name .category-tag {
+  display: block;
+  margin: 0 0 0.2rem;
+  width: fit-content;
+}
 .product-card:hover {
   box-shadow: 0 6px 16px rgba(0,0,0,0.06);
   border-color: var(--blue);

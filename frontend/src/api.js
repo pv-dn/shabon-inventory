@@ -20,11 +20,13 @@ export const api = {
     request("/api/login", { method: "POST", body: JSON.stringify({ password }) }),
   logout: () => request("/api/logout", { method: "POST" }),
   summary: () => request("/api/summary"),
-  products: (q = "", activeOnly = false) =>
+  categories: () => request("/api/categories"),
+  products: (q = "", activeOnly = false, category = "all") =>
     request(
       `/api/products?${new URLSearchParams({
         q,
         ...(activeOnly ? { active_only: "1" } : {}),
+        ...(category && category !== "all" ? { category } : {}),
       })}`
     ),
   product: (id) => request(`/api/products/${id}`),

@@ -3,8 +3,9 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory, session
 
+from categories import CATEGORIES, category_label, is_valid_category
 from config import APP_PASSWORD, SECRET_KEY
-from database import get_connection, init_db, sync_products_from_json
+from database import get_connection, init_db, resolve_category, sync_products_from_json
 from db_compat import insert_returning_id
 
 APP_DIR = Path(__file__).parent
@@ -83,6 +84,10 @@ def row_to_product(row):
         "quantity": row["quantity"],
         "min_stock": row["min_stock"] or 0,
         "note": row["note"] or "",
+        "category": row["category"] if "category" in row.keys() else "bath",
+        "category_label": category_label(
+            row["category"] if "category" in row.keys() else "bath"
+        ),
         "updated_at": row["updated_at"],
         "movement_count": row["movement_count"] if "movement_count" in row.keys() else 0,
         "last_movement_at": row["last_movement_at"] if "last_movement_at" in row.keys() else None,
@@ -136,6 +141,15 @@ def parse_product_payload(data, *, require_all=False):
             except ValueError:
                 errors.append(f"{label}は整数で入力してください")
 
+    if "category" in data or require_all:
+        raw = (data.get("category") or "").strip()
+        if require_all and not raw:
+            errors.append("ジャンルを選択してください")
+        elif raw and not is_valid_category(raw):
+            errors.append("ジャンルが不正です")
+        elif raw:
+            fields["category"] = raw
+
     if errors:
         raise ValueError(errors[0])
     return fields
@@ -170,10 +184,18 @@ def spa(path):
     return serve_react(path)
 
 
+@app.route("/api/categories")
+def api_categories():
+    return jsonify([{"id": cid, "label": label} for cid, label in CATEGORIES])
+
+
 @app.route("/api/products")
 def api_products():
     q = request.args.get("q", "").strip()
     active_only = request.args.get("active_only") == "1"
+    category = request.args.get("category", "").strip()
+    if category and category != "all" and not is_valid_category(category):
+        return jsonify({"error": "ジャンルが不正です"}), 400
     conn = get_connection()
     sql = """
         SELECT p.*,
@@ -187,6 +209,9 @@ def api_products():
         sql += " WHERE EXISTS (SELECT 1 FROM movements m2 WHERE m2.product_id = p.id)"
     else:
         sql += " WHERE 1=1"
+    if category and category != "all":
+        sql += " AND p.category = ?"
+        params.append(category)
     if q:
         sql += " AND (p.code LIKE ? OR p.name LIKE ? OR p.spec LIKE ?)"
         like = f"%{q}%"
@@ -314,12 +339,13 @@ def api_create_product():
         return jsonify({"error": "同じ商品コードが既に登録されています"}), 400
 
     now = datetime.now().isoformat(timespec="seconds")
+    cat = fields.get("category") or resolve_category({"name": fields["name"], "code": fields["code"]})
     product_id = insert_returning_id(
         conn,
         """
         INSERT INTO products (
-            code, name, spec, case_qty, retail_price, member_price, min_stock, note, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            code, name, spec, case_qty, retail_price, member_price, min_stock, note, category, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             fields["code"],
@@ -330,6 +356,7 @@ def api_create_product():
             fields.get("member_price"),
             fields.get("min_stock", 0),
             fields.get("note", ""),
+            cat,
             now,
         ),
     )

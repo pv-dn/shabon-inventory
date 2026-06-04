@@ -9,6 +9,16 @@ const TABS = [
   { id: "history", label: "入出庫履歴" },
 ];
 
+const CATEGORY_OPTIONS = [
+  { id: "laundry", label: "洗濯" },
+  { id: "face", label: "洗顔" },
+  { id: "bath", label: "お風呂" },
+  { id: "hand", label: "手洗い" },
+  { id: "tooth", label: "歯磨き" },
+];
+
+const CATEGORY_FILTERS = [{ id: "all", label: "すべて" }, ...CATEGORY_OPTIONS];
+
 function formatDate(iso) {
   if (!iso) return "—";
   return iso.replace("T", " ").slice(0, 16);
@@ -90,7 +100,12 @@ function ProductCard({ product, compact, expanded, onToggleExpand, onMove, onEdi
         tabIndex={0}
         title="クリックで詳細を表示"
       >
-        <div className="compact-name">{product.name}</div>
+        <div className="compact-name">
+          {product.category_label && (
+            <span className="category-tag">{product.category_label}</span>
+          )}
+          {product.name}
+        </div>
         <div className="compact-qty">
           {product.quantity}
           <small>個</small>
@@ -111,7 +126,12 @@ function ProductCard({ product, compact, expanded, onToggleExpand, onMove, onEdi
           −
         </button>
       )}
-      <div className="card-code">{product.code}</div>
+      <div className="card-code">
+        {product.code}
+        {product.category_label && (
+          <span className="category-tag inline">{product.category_label}</span>
+        )}
+      </div>
       <div className="card-name">{product.name}</div>
       <div className="card-meta">
         {product.spec || "—"} {product.case_qty ? ` / ケース ${product.case_qty}` : ""}
@@ -213,6 +233,7 @@ function EditModal({ product, onClose, onSaved, toast }) {
     member_price: product?.member_price ?? "",
     min_stock: product?.min_stock || 0,
     note: product?.note || "",
+    category: product?.category || "bath",
   });
   const [meta, setMeta] = useState("");
 
@@ -267,6 +288,16 @@ function EditModal({ product, onClose, onSaved, toast }) {
             <label>
               商品名 *
               <input value={form.name} onChange={(e) => set("name", e.target.value)} required />
+            </label>
+            <label>
+              ジャンル *
+              <select value={form.category} onChange={(e) => set("category", e.target.value)} required>
+                {CATEGORY_OPTIONS.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
             </label>
             <label>
               規格
@@ -328,6 +359,8 @@ function DetailModal({ product, onClose, onEdit }) {
           {product.code} {product.name}
         </h2>
         <dl className="detail-grid">
+          <dt>ジャンル</dt>
+          <dd>{product.category_label || "—"}</dd>
           <dt>規格</dt>
           <dd>{product.spec || "—"}</dd>
           <dt>ケース入数</dt>
@@ -403,6 +436,7 @@ export default function App() {
     () => localStorage.getItem("shabon-compact-cards") !== "0"
   );
   const [expandedCardId, setExpandedCardId] = useState(null);
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
   function toggleCompactCards() {
     setCompactCards((v) => {
@@ -441,7 +475,7 @@ export default function App() {
         setMovements(await api.movements(search));
       } else {
         const activeOnly = tab === "active";
-        setProducts(await api.products(search, activeOnly));
+        setProducts(await api.products(search, activeOnly, categoryFilter));
       }
       await loadSummary();
     } catch (err) {
@@ -449,7 +483,7 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, [tab, search, loadSummary, showToast]);
+  }, [tab, search, categoryFilter, loadSummary, showToast]);
 
   useEffect(() => {
     checkAuth();
@@ -519,6 +553,7 @@ export default function App() {
               onClick={() => {
                 setTab(t.id);
                 setSearch("");
+                setCategoryFilter("all");
               }}
             >
               {t.label}
@@ -570,6 +605,21 @@ export default function App() {
             )}
           </div>
 
+          {(tab === "stock" || tab === "active" || tab === "products") && (
+            <div className="category-filters">
+              {CATEGORY_FILTERS.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`category-chip ${categoryFilter === c.id ? "active" : ""}`}
+                  onClick={() => setCategoryFilter(c.id)}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {loading && <p style={{ color: "var(--muted)" }}>読み込み中…</p>}
 
           {!loading && tab === "history" && (
@@ -620,6 +670,7 @@ export default function App() {
                   <thead>
                     <tr>
                       <th>コード</th>
+                      <th>ジャンル</th>
                       <th>商品名</th>
                       <th>規格</th>
                       <th>ケース</th>
@@ -631,6 +682,7 @@ export default function App() {
                     {products.map((p) => (
                       <tr key={p.id}>
                         <td>{p.code}</td>
+                        <td>{p.category_label}</td>
                         <td>{p.name}</td>
                         <td>{p.spec}</td>
                         <td>{p.case_qty}</td>
