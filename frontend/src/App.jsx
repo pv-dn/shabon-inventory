@@ -563,6 +563,7 @@ export default function App() {
 
   return (
     <>
+      <div className="app-shell">
       <header className="header">
         <div className="header-inner">
           <h1 className="brand-title">シャボン玉石けん 在庫管理</h1>
@@ -600,6 +601,7 @@ export default function App() {
         </div>
 
         <div className="panel">
+          <div className="panel-fixed">
           <div className="toolbar">
             <div className="toolbar-left">
               <input
@@ -672,8 +674,10 @@ export default function App() {
             </div>
           )}
 
-          {loading && <p style={{ color: "var(--muted)" }}>読み込み中…</p>}
+          {loading && <p className="panel-loading">読み込み中…</p>}
+          </div>
 
+          <div className="panel-scroll">
           {!loading && tab === "history" && (
             <div className="table-wrap">
               {movements.length === 0 ? (
@@ -774,7 +778,9 @@ export default function App() {
               )}
             </>
           )}
+          </div>
         </div>
+      </div>
       </div>
 
       {modal?.type === "move" && (
