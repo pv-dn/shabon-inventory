@@ -672,6 +672,17 @@ button, input, select {
 .badge-in { background: var(--blue-light); color: var(--blue-dark); }
 .badge-out { background: #ffe5d9; color: #9c4221; }
 .badge-adjust { background: #e0e7ff; color: #3730a3; }
+.badge-cancelled { background: #f3f4f6; color: #6b7280; }
+
+.data-table tr.movement-cancelled td {
+  color: var(--text-muted, #9ca3af);
+  text-decoration: line-through;
+  text-decoration-color: rgba(156, 163, 175, 0.55);
+}
+.data-table tr.movement-cancelled .badge-cancelled,
+.data-table tr.movement-cancelled .btn {
+  text-decoration: none;
+}
 
 .modal-backdrop {
   position: fixed;

@@ -199,14 +199,14 @@ def api_products():
     conn = get_connection()
     sql = """
         SELECT p.*,
-               COUNT(m.id) AS movement_count,
-               MAX(m.created_at) AS last_movement_at
+               SUM(CASE WHEN m.cancelled_at IS NULL THEN 1 ELSE 0 END) AS movement_count,
+               MAX(CASE WHEN m.cancelled_at IS NULL THEN m.created_at END) AS last_movement_at
         FROM products p
         LEFT JOIN movements m ON m.product_id = p.id
     """
     params = []
     if active_only:
-        sql += " WHERE EXISTS (SELECT 1 FROM movements m2 WHERE m2.product_id = p.id)"
+        sql += " WHERE EXISTS (SELECT 1 FROM movements m2 WHERE m2.product_id = p.id AND m2.cancelled_at IS NULL)"
     else:
         sql += " WHERE 1=1"
     if category and category != "all":
@@ -321,6 +321,61 @@ def api_create_movement():
     )
     conn.commit()
     updated = conn.execute("SELECT * FROM products WHERE id = ?", (product_id,)).fetchone()
+    conn.close()
+    return jsonify({"ok": True, "product": row_to_product(updated)})
+
+
+@app.route("/api/movements/<int:movement_id>/cancel", methods=["POST"])
+def api_cancel_movement(movement_id):
+    conn = get_connection()
+    movement = conn.execute("SELECT * FROM movements WHERE id = ?", (movement_id,)).fetchone()
+    if not movement:
+        conn.close()
+        return jsonify({"error": "履歴が見つかりません"}), 404
+    if movement["cancelled_at"]:
+        conn.close()
+        return jsonify({"error": "この履歴は既に取り消されています"}), 400
+
+    product = conn.execute("SELECT * FROM products WHERE id = ?", (movement["product_id"],)).fetchone()
+    if not product:
+        conn.close()
+        return jsonify({"error": "商品が見つかりません"}), 404
+
+    delta = movement["after_qty"] - movement["before_qty"]
+    new_qty = product["quantity"] - delta
+    if new_qty < 0:
+        conn.close()
+        return jsonify(
+            {"error": f"取り消すと在庫が不足します（現在 {product['quantity']} 個）"}
+        ), 400
+
+    now = datetime.now().isoformat(timespec="seconds")
+    if delta != 0:
+        conn.execute(
+            "UPDATE products SET quantity = ?, updated_at = ? WHERE id = ?",
+            (new_qty, now, movement["product_id"]),
+        )
+        conn.execute(
+            """
+            UPDATE movements
+            SET before_qty = before_qty - ?, after_qty = after_qty - ?
+            WHERE product_id = ?
+              AND cancelled_at IS NULL
+              AND (created_at > ? OR (created_at = ? AND id > ?))
+            """,
+            (
+                delta,
+                delta,
+                movement["product_id"],
+                movement["created_at"],
+                movement["created_at"],
+                movement_id,
+            ),
+        )
+
+    conn.execute("UPDATE movements SET cancelled_at = ? WHERE id = ?", (now, movement_id))
+    conn.commit()
+    updated = conn.execute("SELECT * FROM products WHERE id = ?", (movement["product_id"],)).fetchone()
     conn.close()
     return jsonify({"ok": True, "product": row_to_product(updated)})
 
@@ -447,7 +502,7 @@ def api_summary():
     ).fetchone()["c"]
     zero = conn.execute("SELECT COUNT(*) AS c FROM products WHERE quantity = 0").fetchone()["c"]
     active = conn.execute(
-        "SELECT COUNT(DISTINCT product_id) AS c FROM movements"
+        "SELECT COUNT(DISTINCT product_id) AS c FROM movements WHERE cancelled_at IS NULL"
     ).fetchone()["c"]
     conn.close()
     return jsonify({"total": total, "low_stock": low, "zero_stock": zero, "with_movements": active})

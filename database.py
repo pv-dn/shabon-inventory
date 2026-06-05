@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS movements (
     after_qty INTEGER NOT NULL,
     memo TEXT,
     created_at TEXT NOT NULL,
+    cancelled_at TEXT,
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
@@ -67,7 +68,8 @@ CREATE TABLE IF NOT EXISTS movements (
     before_qty INTEGER NOT NULL,
     after_qty INTEGER NOT NULL,
     memo TEXT,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    cancelled_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_movements_product ON movements(product_id);
@@ -111,6 +113,26 @@ def migrate_add_category(conn):
     conn.commit()
 
 
+def migrate_add_cancelled_at(conn):
+    if USE_POSTGRES:
+        cur = conn._conn.cursor()
+        cur.execute(
+            """
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'movements' AND column_name = 'cancelled_at'
+            """
+        )
+        if not cur.fetchone():
+            conn.execute("ALTER TABLE movements ADD COLUMN cancelled_at TEXT")
+        cur.close()
+    else:
+        try:
+            conn.execute("ALTER TABLE movements ADD COLUMN cancelled_at TEXT")
+        except sqlite3.OperationalError:
+            pass
+    conn.commit()
+
+
 def init_db():
     conn = get_connection()
     schema = POSTGRES_SCHEMA if USE_POSTGRES else SQLITE_SCHEMA
@@ -119,6 +141,7 @@ def init_db():
         if stmt:
             conn.execute(stmt)
     migrate_add_category(conn)
+    migrate_add_cancelled_at(conn)
     conn.close()
 
 

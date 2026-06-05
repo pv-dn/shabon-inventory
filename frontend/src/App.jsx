@@ -398,9 +398,16 @@ function EditModal({ product, onClose, onSaved, toast }) {
   );
 }
 
-function MovementHistoryTable({ movements, showMemo = true }) {
+function MovementHistoryTable({
+  movements,
+  showMemo = true,
+  showProduct = false,
+  onCancel,
+  cancellingId,
+  emptyMessage = "この品目の増減履歴はまだありません",
+}) {
   if (movements.length === 0) {
-    return <p className="empty">この品目の増減履歴はまだありません</p>;
+    return <p className="empty">{emptyMessage}</p>;
   }
 
   return (
@@ -409,21 +416,39 @@ function MovementHistoryTable({ movements, showMemo = true }) {
         <thead>
           <tr>
             <th>日時</th>
+            {showProduct && (
+              <>
+                <th>コード</th>
+                <th>商品名</th>
+              </>
+            )}
             <th>種別</th>
             <th className="num">増減</th>
             <th className="num">操作数</th>
             <th className="num">在庫（前→後）</th>
             {showMemo && <th>メモ</th>}
+            {onCancel && <th>操作</th>}
           </tr>
         </thead>
         <tbody>
           {movements.map((m) => {
             const delta = movementDelta(m);
+            const cancelled = Boolean(m.cancelled_at);
             return (
-              <tr key={m.id}>
+              <tr key={m.id} className={cancelled ? "movement-cancelled" : ""}>
                 <td>{formatDate(m.created_at)}</td>
+                {showProduct && (
+                  <>
+                    <td>{m.code}</td>
+                    <td>{m.name}</td>
+                  </>
+                )}
                 <td>
-                  <span className={`badge badge-${m.type}`}>{TYPE_LABELS[m.type]}</span>
+                  {cancelled ? (
+                    <span className="badge badge-cancelled">取り消し済</span>
+                  ) : (
+                    <span className={`badge badge-${m.type}`}>{TYPE_LABELS[m.type]}</span>
+                  )}
                 </td>
                 <td className={`num delta ${delta > 0 ? "plus" : delta < 0 ? "minus" : "zero"}`}>
                   {formatDelta(delta)}
@@ -433,6 +458,20 @@ function MovementHistoryTable({ movements, showMemo = true }) {
                   {m.before_qty} → {m.after_qty}
                 </td>
                 {showMemo && <td>{m.memo || ""}</td>}
+                {onCancel && (
+                  <td>
+                    {!cancelled && (
+                      <button
+                        type="button"
+                        className="btn small danger"
+                        disabled={cancellingId === m.id}
+                        onClick={() => onCancel(m)}
+                      >
+                        {cancellingId === m.id ? "処理中…" : "取り消し"}
+                      </button>
+                    )}
+                  </td>
+                )}
               </tr>
             );
           })}
@@ -450,6 +489,8 @@ function ProductHistoryCorner({
   loadingMovements,
   onMove,
   onDetail,
+  onCancel,
+  cancellingId,
 }) {
   const selected = products.find((p) => p.id === selectedId) ?? null;
 
@@ -512,7 +553,11 @@ function ProductHistoryCorner({
             {loadingMovements ? (
               <p className="panel-loading">履歴を読み込み中…</p>
             ) : (
-              <MovementHistoryTable movements={movements} />
+              <MovementHistoryTable
+                movements={movements}
+                onCancel={onCancel}
+                cancellingId={cancellingId}
+              />
             )}
           </>
         )}
@@ -521,12 +566,18 @@ function ProductHistoryCorner({
   );
 }
 
-function DetailModal({ product, onClose, onEdit }) {
+function DetailModal({ product, onClose, onEdit, onCancel, cancellingId }) {
   const [movements, setMovements] = useState([]);
 
   useEffect(() => {
     api.productMovements(product.id).then(setMovements);
   }, [product.id]);
+
+  async function handleCancel(m) {
+    if (!onCancel) return;
+    const ok = await onCancel(m);
+    if (ok) setMovements(await api.productMovements(product.id));
+  }
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -559,7 +610,12 @@ function DetailModal({ product, onClose, onEdit }) {
         </button>
         <h3 style={{ marginTop: "1.25rem" }}>増減履歴</h3>
         <div style={{ maxHeight: "280px" }}>
-          <MovementHistoryTable movements={movements} showMemo={false} />
+          <MovementHistoryTable
+            movements={movements}
+            showMemo={false}
+            onCancel={onCancel ? handleCancel : undefined}
+            cancellingId={cancellingId}
+          />
         </div>
         <div className="modal-actions">
           <button type="button" className="btn secondary" onClick={onClose}>
@@ -589,6 +645,7 @@ export default function App() {
   );
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [cancellingId, setCancellingId] = useState(null);
 
   const selectedProduct =
     compactCards && selectedProductId
@@ -654,6 +711,30 @@ export default function App() {
       setLoading(false);
     }
   }, [tab, search, categoryFilter, ledgerProductId, loadSummary, showToast]);
+
+  const handleCancelMovement = useCallback(
+    async (m) => {
+      const label = TYPE_LABELS[m.type];
+      const msg = [
+        `この${label}記録（${formatDelta(movementDelta(m))}）を取り消しますか？`,
+        `在庫数が ${m.after_qty} 個 → ${m.before_qty} 個に戻ります。`,
+      ].join("\n");
+      if (!confirm(msg)) return false;
+      setCancellingId(m.id);
+      try {
+        await api.cancelMovement(m.id);
+        showToast("履歴を取り消しました");
+        await loadData();
+        return true;
+      } catch (err) {
+        showToast(err.message, true);
+        return false;
+      } finally {
+        setCancellingId(null);
+      }
+    },
+    [loadData, showToast]
+  );
 
   useEffect(() => {
     checkAuth();
@@ -851,53 +932,19 @@ export default function App() {
               loadingMovements={ledgerMovementsLoading}
               onMove={(pr) => setModal({ type: "move", product: pr })}
               onDetail={(pr) => setModal({ type: "detail", product: pr })}
+              onCancel={handleCancelMovement}
+              cancellingId={cancellingId}
             />
           )}
 
           {!loading && tab === "history" && (
-            <div className="table-wrap">
-              {movements.length === 0 ? (
-                <p className="empty">履歴がありません</p>
-              ) : (
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>日時</th>
-                      <th>コード</th>
-                      <th>商品名</th>
-                      <th>種別</th>
-                      <th className="num">増減</th>
-                      <th className="num">操作数</th>
-                      <th className="num">前</th>
-                      <th className="num">後</th>
-                      <th>メモ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {movements.map((m) => {
-                      const delta = movementDelta(m);
-                      return (
-                        <tr key={m.id}>
-                          <td>{formatDate(m.created_at)}</td>
-                          <td>{m.code}</td>
-                          <td>{m.name}</td>
-                          <td>
-                            <span className={`badge badge-${m.type}`}>{TYPE_LABELS[m.type]}</span>
-                          </td>
-                          <td className={`num delta ${delta > 0 ? "plus" : delta < 0 ? "minus" : "zero"}`}>
-                            {formatDelta(delta)}
-                          </td>
-                          <td className="num">{m.quantity}</td>
-                          <td className="num">{m.before_qty}</td>
-                          <td className="num">{m.after_qty}</td>
-                          <td>{m.memo || ""}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
+            <MovementHistoryTable
+              movements={movements}
+              showProduct
+              emptyMessage="履歴がありません"
+              onCancel={handleCancelMovement}
+              cancellingId={cancellingId}
+            />
           )}
 
           {!loading && tab === "products" && (
@@ -987,6 +1034,8 @@ export default function App() {
           product={modal.product}
           onClose={() => setModal(null)}
           onEdit={(p) => setModal({ type: "edit", product: p })}
+          onCancel={handleCancelMovement}
+          cancellingId={cancellingId}
         />
       )}
 
