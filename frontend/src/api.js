@@ -4,11 +4,14 @@ export async function request(url, options = {}) {
     headers: { "Content-Type": "application/json", ...options.headers },
     ...options,
   });
-  let data;
-  try {
-    data = await res.json();
-  } catch {
-    throw new Error("サーバーからの応答を読み取れません");
+  const text = await res.text();
+  let data = {};
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error("サーバーからの応答を読み取れません");
+    }
   }
   if (!res.ok) throw new Error(data.error || `エラー (${res.status})`);
   return data;

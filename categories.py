@@ -1,9 +1,10 @@
-"""品目ジャンル（洗濯・洗顔・お風呂・台所・手洗い・歯磨き・その他）"""
+"""品目ジャンル（洗濯・洗顔・お風呂・ヘアケア・台所・手洗い・歯磨き・その他）"""
 
 CATEGORIES = [
     ("laundry", "洗濯"),
     ("face", "洗顔"),
     ("bath", "お風呂"),
+    ("haircare", "ヘアケア"),
     ("kitchen", "台所"),
     ("hand", "手洗い"),
     ("tooth", "歯磨き"),
@@ -44,6 +45,8 @@ def guess_category(name: str, code: str = "") -> str:
         return "laundry"
     if "台所ギフト" in n or "台所" in n or "食器" in n or "ふきふき" in n:
         return "kitchen"
+    if "シャンプー" in n or "リンス" in n or "シャポン" in n or "ヘア" in n:
+        return "haircare"
     if "浴用" in n or "ボデイ" in n or "ビューティー" in n or "バブルガード" in n or "全身ケア" in n:
         return "bath"
     if "ギフト" in n:
@@ -51,8 +54,6 @@ def guess_category(name: str, code: str = "") -> str:
             return "laundry"
         if "台所" in n:
             return "kitchen"
-        return "bath"
-    if "シャンプー" in n or "リンス" in n:
         return "bath"
     if any(
         k in n

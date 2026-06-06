@@ -100,7 +100,7 @@
   },
   {
     "code": "3201",
-    "name": "詰替え用（詰替え用）",
+    "name": "無添加ボデイソープたっぷり泡",
     "spec": "470ml",
     "case_qty": "20",
     "retail_price": null,
@@ -118,7 +118,7 @@
   },
   {
     "code": "3226",
-    "name": "詰替え用（詰替え用）",
+    "name": "全身ケアソープバブルガード　詰替え用",
     "spec": "470ml",
     "case_qty": "20",
     "retail_price": null,
@@ -127,7 +127,7 @@
   },
   {
     "code": "3227",
-    "name": "４L",
+    "name": "全身ケアソープバブルガード   詰め替え用　　　４L",
     "spec": "4L",
     "case_qty": "4",
     "retail_price": null,
@@ -145,7 +145,7 @@
   },
   {
     "code": "3191",
-    "name": "詰替え用（詰替え用）",
+    "name": "メンズシャボンフェイシャルソープ",
     "spec": "250ml",
     "case_qty": "36",
     "retail_price": null,
@@ -172,7 +172,7 @@
   },
   {
     "code": "3154",
-    "name": "詰替え用（詰替え用）",
+    "name": "洗顔石けんパウダータイプ",
     "spec": "７０ｇ",
     "case_qty": "30",
     "retail_price": null,
@@ -181,39 +181,39 @@
   },
   {
     "code": "3325",
-    "name": "無添加石けんシャンプー泡タイプ",
+    "name": "無添加せつけんシャンプー泡タイプ",
     "spec": "520ml",
     "case_qty": "12",
     "retail_price": null,
     "member_price": null,
-    "category": "bath"
+    "category": "haircare"
   },
   {
     "code": "3326",
-    "name": "詰替え用（詰替え用）",
+    "name": "無添加せつけんシャンプー泡タイプ",
     "spec": "420ml",
     "case_qty": "20",
     "retail_price": null,
     "member_price": null,
-    "category": "other"
+    "category": "haircare"
   },
   {
     "code": "2430",
-    "name": "無添加石けんシャンプー専用リンス",
+    "name": "無添加せつけんシャンプー専用リンス",
     "spec": "520ml",
     "case_qty": "12",
     "retail_price": null,
     "member_price": null,
-    "category": "bath"
+    "category": "haircare"
   },
   {
     "code": "2431",
-    "name": "詰替え用（詰替え用）",
+    "name": "無添加せつけんシャンプー専用リンス",
     "spec": "420ml",
     "case_qty": "20",
     "retail_price": null,
     "member_price": null,
-    "category": "bath"
+    "category": "haircare"
   },
   {
     "code": "3192",
@@ -222,34 +222,34 @@
     "case_qty": "12",
     "retail_price": null,
     "member_price": null,
-    "category": "bath"
+    "category": "haircare"
   },
   {
     "code": "3193",
-    "name": "詰替え用（詰替え用）",
+    "name": "メンズシャポンソープシャンプー",
     "spec": "420ml",
     "case_qty": "20",
     "retail_price": null,
     "member_price": null,
-    "category": "bath"
+    "category": "haircare"
   },
   {
     "code": "3300",
-    "name": "パウダー石けんシャンプー",
+    "name": "パウダーせつけんシャンプー",
     "spec": "１００ｇ",
     "case_qty": "30",
     "retail_price": null,
     "member_price": null,
-    "category": "bath"
+    "category": "haircare"
   },
   {
     "code": "3301",
-    "name": "詰替え用（詰替え用）",
+    "name": "パウダーせつけんシャンプー",
     "spec": "１００ｇ",
     "case_qty": "20",
     "retail_price": null,
     "member_price": null,
-    "category": "other"
+    "category": "haircare"
   },
   {
     "code": "2400",
@@ -258,20 +258,20 @@
     "case_qty": "30",
     "retail_price": null,
     "member_price": null,
-    "category": "bath"
+    "category": "haircare"
   },
   {
     "code": "2401",
-    "name": "詰替え用（詰替え用）",
+    "name": "パウダーリンス",
     "spec": "１５０ｇ",
     "case_qty": "20",
     "retail_price": null,
     "member_price": null,
-    "category": "bath"
+    "category": "haircare"
   },
   {
     "code": "2841",
-    "name": "シャボン玉石けんハミガキ（ミニサイズ）",
+    "name": "シャボン玉せつけんハミガキ（ミニサイズ）",
     "spec": "４０ｇ",
     "case_qty": "150",
     "retail_price": null,
@@ -280,7 +280,7 @@
   },
   {
     "code": "2870",
-    "name": "シャボン玉薬用石けんハミガキ",
+    "name": "シャボン玉薬用せつけんハミガキ",
     "spec": "８０ｇ",
     "case_qty": "60",
     "retail_price": null,
@@ -289,7 +289,7 @@
   },
   {
     "code": "2890",
-    "name": "シャボン玉こども石けんハミガキ",
+    "name": "シャボン玉こどもせつけんハミガキ",
     "spec": "５０ｇ",
     "case_qty": "60",
     "retail_price": null,
@@ -316,7 +316,7 @@
   },
   {
     "code": "3258",
-    "name": "詰替え用（詰替え用）",
+    "name": "ベビーソープ泡タイプ",
     "spec": "400m I",
     "case_qty": "20",
     "retail_price": null,
@@ -334,12 +334,12 @@
   },
   {
     "code": "3328",
-    "name": "シャボン玉無添加石けんシャンプー分包",
+    "name": "シャボン玉無添加せつけんシャンプー分包",
     "spec": "15ml",
     "case_qty": "320",
     "retail_price": null,
     "member_price": null,
-    "category": "bath"
+    "category": "haircare"
   },
   {
     "code": "3380",
@@ -361,12 +361,12 @@
   },
   {
     "code": "3381",
-    "name": "詰替え用（詰替え用）",
+    "name": "バブルガード",
     "spec": "250ml",
     "case_qty": "36",
     "retail_price": null,
     "member_price": null,
-    "category": "other"
+    "category": "bath"
   },
   {
     "code": "3388",
@@ -378,17 +378,8 @@
     "category": "other"
   },
   {
-    "code": "商品コード",
-    "name": "商品名",
-    "spec": "規格",
-    "case_qty": "ケース\n入数",
-    "retail_price": null,
-    "member_price": null,
-    "category": "other"
-  },
-  {
     "code": "1090",
-    "name": "シャボン玉台所用石けん泡タイプ",
+    "name": "シャボン玉台所用せつけん泡タイプ",
     "spec": "300ml",
     "case_qty": "24",
     "retail_price": null,
@@ -397,7 +388,7 @@
   },
   {
     "code": "1091",
-    "name": "詰替え用（詰替え用）",
+    "name": "シャボン玉台所用せつけん泡タイプ",
     "spec": "275ml",
     "case_qty": "36",
     "retail_price": null,
@@ -406,7 +397,7 @@
   },
   {
     "code": "1073",
-    "name": "２．１L",
+    "name": "シャボン玉台所用せつけん泡タイプ",
     "spec": "2.1L",
     "case_qty": "6",
     "retail_price": null,
@@ -415,7 +406,7 @@
   },
   {
     "code": "2180",
-    "name": "シャボン玉台所用石けん固形タイフ゜",
+    "name": "シャボン玉台所用せつけん固形タイフ゜",
     "spec": "110g",
     "case_qty": "12×10",
     "retail_price": null,
@@ -433,43 +424,43 @@
   },
   {
     "code": "3510",
-    "name": "シャボン玉EM石けんシャンプー",
+    "name": "シャボン玉EMせつけんシャンプー",
     "spec": "520ml",
     "case_qty": "12",
     "retail_price": null,
     "member_price": null,
-    "category": "bath"
+    "category": "haircare"
   },
   {
     "code": "3511",
-    "name": "詰替え用（詰替え用）",
+    "name": "シャボン玉EMせつけんシャンプー",
     "spec": "420ml",
     "case_qty": "20",
     "retail_price": null,
     "member_price": null,
-    "category": "other"
+    "category": "haircare"
   },
   {
     "code": "2440",
-    "name": "シャボン玉EM石けんシャンプー専用リン",
+    "name": "シャボン玉EMせつけんシャンプー専用リン",
     "spec": "520ml",
     "case_qty": "12",
     "retail_price": null,
     "member_price": null,
-    "category": "bath"
+    "category": "haircare"
   },
   {
     "code": "2441",
-    "name": "詰替え用（詰替え用）",
+    "name": "シャボン玉EMせつけんシャンプー専用リン",
     "spec": "420m",
     "case_qty": "20",
     "retail_price": null,
     "member_price": null,
-    "category": "bath"
+    "category": "haircare"
   },
   {
     "code": "1501",
-    "name": "シャボン玉EM液体洗濯石けん",
+    "name": "シャボン玉EM液体洗濯せつけん",
     "spec": "1200ml",
     "case_qty": "10",
     "retail_price": null,
@@ -478,7 +469,7 @@
   },
   {
     "code": "1502",
-    "name": "詰替え用（詰替え用）",
+    "name": "シャボン玉EM液体洗濯せつけん",
     "spec": "1000ml",
     "case_qty": "12",
     "retail_price": null,
@@ -487,7 +478,7 @@
   },
   {
     "code": "1504",
-    "name": "５L",
+    "name": "シャボン玉EM液体洗濯せつけん",
     "spec": "5L",
     "case_qty": "3",
     "retail_price": null,
@@ -505,16 +496,16 @@
   },
   {
     "code": "3521",
-    "name": "詰替え用（詰替え用）",
+    "name": "シャボン玉EMボデイソーフ゜",
     "spec": "420m",
     "case_qty": "20",
     "retail_price": null,
     "member_price": null,
-    "category": "other"
+    "category": "bath"
   },
   {
     "code": "1191",
-    "name": "シャボン玉食器洗い液体石けん詰替え",
+    "name": "シャボン玉食器洗い液体せつけん詰替え",
     "spec": "250ml",
     "case_qty": "36",
     "retail_price": null,
@@ -532,7 +523,7 @@
   },
   {
     "code": "2860",
-    "name": "シャボン玉EM石けんハミガキ",
+    "name": "シャボン玉EMせつけんハミガキ",
     "spec": "140g",
     "case_qty": "10×6",
     "retail_price": null,
@@ -541,7 +532,7 @@
   },
   {
     "code": "2130",
-    "name": "シャボン玉EM台所用石けん",
+    "name": "シャボン玉EM台所用せつけん",
     "spec": "110g",
     "case_qty": "12×10",
     "retail_price": null,
@@ -550,7 +541,7 @@
   },
   {
     "code": "3130",
-    "name": "シャボン玉EM化粧石けん（浴用）",
+    "name": "シャボン玉EM化粧せつけん（浴用）",
     "spec": "100g",
     "case_qty": "10×12",
     "retail_price": null,
@@ -613,7 +604,7 @@
   },
   {
     "code": "2103",
-    "name": "シャボン玉スノール純石けん",
+    "name": "シャボン玉スノール純せつけん",
     "spec": "180g",
     "case_qty": "60",
     "retail_price": null,
@@ -631,12 +622,12 @@
   },
   {
     "code": "2432",
-    "name": "シャポン玉無添加石けんシャンプー専用 リンス分包",
+    "name": "シャポン玉無添加せつけんシャンプー専用 リンス分包",
     "spec": "15ml",
     "case_qty": "320",
     "retail_price": null,
     "member_price": null,
-    "category": "bath"
+    "category": "haircare"
   },
   {
     "code": "3237",
@@ -649,7 +640,7 @@
   },
   {
     "code": "2080",
-    "name": "石けんクレンサー",
+    "name": "せつけんクレンサー",
     "spec": "160g",
     "case_qty": "30",
     "retail_price": null,
@@ -685,7 +676,7 @@
   },
   {
     "code": "2260",
-    "name": "粉の無添加石けん",
+    "name": "粉の無添加せつけん",
     "spec": "200g",
     "case_qty": "20",
     "retail_price": null,
@@ -694,7 +685,7 @@
   },
   {
     "code": "2270",
-    "name": "ふきふき石けんバブルガード",
+    "name": "ふきふきせっけんバブルガード",
     "spec": "300ml",
     "case_qty": "20",
     "retail_price": null,
@@ -703,21 +694,21 @@
   },
   {
     "code": "2271",
-    "name": "詰替え用（詰替え用）",
+    "name": "ふきふきせっけんバブルガード",
     "spec": "250ml",
     "case_qty": "30",
     "retail_price": null,
     "member_price": null,
-    "category": "hand"
+    "category": "kitchen"
   },
   {
     "code": "2272",
-    "name": "２．１L",
+    "name": "ふきふきせっけんバブルガード",
     "spec": "2.1L",
     "case_qty": "6",
     "retail_price": null,
     "member_price": null,
-    "category": "hand"
+    "category": "kitchen"
   },
   {
     "code": "1615",
@@ -730,7 +721,7 @@
   },
   {
     "code": "1616",
-    "name": "詰替え用（詰替え用）",
+    "name": "シャボン玉スノール　　　　　　詰替え用",
     "spec": "800ml",
     "case_qty": "12",
     "retail_price": null,
@@ -739,7 +730,7 @@
   },
   {
     "code": "1008",
-    "name": "粉石けんスノール",
+    "name": "粉せつけんスノール",
     "spec": "1.5kg",
     "case_qty": "8",
     "retail_price": null,
@@ -757,21 +748,12 @@
   },
   {
     "code": "1551",
-    "name": "詰替え用（詰替え用）",
+    "name": "スノールベビー　　　　　　　　詰替え用",
     "spec": "650mI",
     "case_qty": "20",
     "retail_price": null,
     "member_price": null,
     "category": "laundry"
-  },
-  {
-    "code": "商品コード",
-    "name": "商品名",
-    "spec": "規格",
-    "case_qty": "ケース\n入数",
-    "retail_price": null,
-    "member_price": null,
-    "category": "other"
   },
   {
     "code": "4100",

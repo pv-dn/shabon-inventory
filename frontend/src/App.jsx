@@ -10,17 +10,22 @@ const TABS = [
   { id: "history", label: "入出庫履歴" },
 ];
 
-const CATEGORY_OPTIONS = [
+const FALLBACK_CATEGORIES = [
   { id: "laundry", label: "洗濯" },
   { id: "face", label: "洗顔" },
   { id: "bath", label: "お風呂" },
+  { id: "haircare", label: "ヘアケア" },
   { id: "kitchen", label: "台所" },
   { id: "hand", label: "手洗い" },
   { id: "tooth", label: "歯磨き" },
   { id: "other", label: "その他" },
 ];
 
-const CATEGORY_FILTERS = [{ id: "all", label: "すべて" }, ...CATEGORY_OPTIONS];
+const ALL_CATEGORY = { id: "all", label: "すべて" };
+
+function categoryFilters(categories) {
+  return [ALL_CATEGORY, ...categories];
+}
 
 function formatDate(iso) {
   if (!iso) return "—";
@@ -48,14 +53,14 @@ function stockClass(p) {
   return "";
 }
 
-function categoryClass(category) {
+function categoryClass(category, categories) {
   const id = category || "other";
-  return CATEGORY_OPTIONS.some((c) => c.id === id) ? `cat-${id}` : "cat-other";
+  return categories.some((c) => c.id === id) ? `cat-${id}` : "cat-other";
 }
 
-function categoryChipClass(categoryId) {
+function categoryChipClass(categoryId, categories) {
   if (categoryId === "all") return "cat-all";
-  return categoryClass(categoryId);
+  return categoryClass(categoryId, categories);
 }
 
 function Toast({ message, error, onDone }) {
@@ -65,6 +70,31 @@ function Toast({ message, error, onDone }) {
   }, [onDone]);
   if (!message) return null;
   return <div className={`toast ${error ? "error" : ""}`}>{message}</div>;
+}
+
+function ConfirmDialog({ open, message, confirmLabel = "OK", cancelLabel = "キャンセル", danger = false, onConfirm, onCancel }) {
+  if (!open) return null;
+  return (
+    <div className="modal-backdrop confirm-backdrop" onClick={onCancel}>
+      <div
+        className="modal confirm-dialog"
+        onClick={(e) => e.stopPropagation()}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="confirm-message"
+      >
+        <p id="confirm-message">{message}</p>
+        <div className="modal-actions">
+          <button type="button" className="btn secondary" onClick={onCancel}>
+            {cancelLabel}
+          </button>
+          <button type="button" className={`btn ${danger ? "danger" : "primary"}`} onClick={onConfirm}>
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function LoginScreen({ onLogin }) {
@@ -194,11 +224,11 @@ function CompactDetailPanel({ product, onClose, onMove, onEdit, onDetail, toast,
   );
 }
 
-function ProductCard({ product, compact, selected, onSelect, onMove, onEdit, onDetail }) {
+function ProductCard({ product, compact, selected, categories, onSelect, onMove, onEdit, onDetail }) {
   if (compact) {
     return (
       <article
-        className={`product-card compact ${categoryClass(product.category)} ${stockClass(product)} ${selected ? "selected" : ""}`}
+        className={`product-card compact ${categoryClass(product.category, categories)} ${stockClass(product)} ${selected ? "selected" : ""}`}
         onClick={() => onSelect(product.id)}
         onKeyDown={(e) => e.key === "Enter" && onSelect(product.id)}
         role="button"
@@ -220,7 +250,7 @@ function ProductCard({ product, compact, selected, onSelect, onMove, onEdit, onD
   }
 
   return (
-    <article className={`product-card ${categoryClass(product.category)} ${stockClass(product)}`}>
+    <article className={`product-card ${categoryClass(product.category, categories)} ${stockClass(product)}`}>
       <div className="card-code">
         {product.code}
         {product.category_label && (
@@ -317,7 +347,7 @@ function MoveModal({ product, onClose, onSaved, toast }) {
   );
 }
 
-function EditModal({ product, onClose, onSaved, toast }) {
+function EditModal({ product, onClose, onSaved, toast, categories, askConfirm }) {
   const isNew = !product?.id;
   const [form, setForm] = useState({
     code: product?.code || "",
@@ -331,10 +361,14 @@ function EditModal({ product, onClose, onSaved, toast }) {
     category: product?.category || "other",
   });
   const [meta, setMeta] = useState("");
+  const [movementCount, setMovementCount] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!isNew && product?.id) {
       api.productMovements(product.id).then((m) => {
+        setMovementCount(m.length);
         setMeta(`現在庫 ${product.quantity} / 履歴 ${m.length} 件`);
       });
     }
@@ -346,6 +380,7 @@ function EditModal({ product, onClose, onSaved, toast }) {
 
   async function save(e) {
     e.preventDefault();
+    setSaving(true);
     try {
       if (isNew) await api.createProduct(form);
       else await api.updateProduct(product.id, form);
@@ -354,11 +389,18 @@ function EditModal({ product, onClose, onSaved, toast }) {
       onClose();
     } catch (err) {
       toast(err.message, true);
+    } finally {
+      setSaving(false);
     }
   }
 
   async function remove() {
-    if (!confirm(meta.includes("履歴") ? "品目と履歴を削除しますか？" : "この品目を削除しますか？")) return;
+    const msg =
+      movementCount > 0
+        ? "品目と入出庫履歴を削除します。よろしいですか？"
+        : "この品目を削除します。よろしいですか？";
+    if (!(await askConfirm({ message: msg, confirmLabel: "削除", danger: true }))) return;
+    setDeleting(true);
     try {
       await api.deleteProduct(product.id);
       toast("削除しました");
@@ -366,28 +408,32 @@ function EditModal({ product, onClose, onSaved, toast }) {
       onClose();
     } catch (err) {
       toast(err.message, true);
+    } finally {
+      setDeleting(false);
     }
   }
+
+  const busy = deleting || saving;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal wide" onClick={(e) => e.stopPropagation()}>
         <h2>{isNew ? "新規品目" : "品目編集"}</h2>
         {meta && <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>{meta}</p>}
-        <form onSubmit={save}>
+        <form id="edit-product-form" onSubmit={save}>
           <div className="form-grid">
             <label>
               商品コード *
-              <input value={form.code} onChange={(e) => set("code", e.target.value)} required />
+              <input value={form.code} onChange={(e) => set("code", e.target.value)} required disabled={busy} />
             </label>
             <label>
               商品名 *
-              <input value={form.name} onChange={(e) => set("name", e.target.value)} required />
+              <input value={form.name} onChange={(e) => set("name", e.target.value)} required disabled={busy} />
             </label>
             <label>
               ジャンル *
-              <select value={form.category} onChange={(e) => set("category", e.target.value)} required>
-                {CATEGORY_OPTIONS.map((c) => (
+              <select value={form.category} onChange={(e) => set("category", e.target.value)} required disabled={busy}>
+                {categories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.label}
                   </option>
@@ -396,45 +442,55 @@ function EditModal({ product, onClose, onSaved, toast }) {
             </label>
             <label>
               規格
-              <input value={form.spec} onChange={(e) => set("spec", e.target.value)} />
+              <input value={form.spec} onChange={(e) => set("spec", e.target.value)} disabled={busy} />
             </label>
             <label>
               ケース入数
-              <input value={form.case_qty} onChange={(e) => set("case_qty", e.target.value)} />
+              <input value={form.case_qty} onChange={(e) => set("case_qty", e.target.value)} disabled={busy} />
             </label>
             <label>
               一般価格
-              <input type="number" min={0} value={form.retail_price} onChange={(e) => set("retail_price", e.target.value)} />
+              <input type="number" min={0} value={form.retail_price} onChange={(e) => set("retail_price", e.target.value)} disabled={busy} />
             </label>
             <label>
               会員価格
-              <input type="number" min={0} value={form.member_price} onChange={(e) => set("member_price", e.target.value)} />
+              <input type="number" min={0} value={form.member_price} onChange={(e) => set("member_price", e.target.value)} disabled={busy} />
             </label>
             <label>
               補充下限
-              <input type="number" min={0} value={form.min_stock} onChange={(e) => set("min_stock", e.target.value)} />
+              <input type="number" min={0} value={form.min_stock} onChange={(e) => set("min_stock", e.target.value)} disabled={busy} />
             </label>
             <label className="full">
               メモ
-              <input value={form.note} onChange={(e) => set("note", e.target.value)} />
+              <input value={form.note} onChange={(e) => set("note", e.target.value)} disabled={busy} />
             </label>
           </div>
-          <div className={`modal-actions ${!isNew ? "spread" : ""}`}>
-            {!isNew && (
-              <button type="button" className="btn danger" onClick={remove}>
-                削除
-              </button>
-            )}
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button type="button" className="btn secondary" onClick={onClose}>
+          {isNew ? (
+            <div className="modal-actions">
+              <button type="button" className="btn secondary" onClick={onClose} disabled={busy}>
                 キャンセル
               </button>
-              <button type="submit" className="btn primary">
-                保存
+              <button type="submit" className="btn primary" disabled={busy}>
+                {saving ? "保存中…" : "保存"}
+              </button>
+            </div>
+          ) : null}
+        </form>
+        {!isNew && (
+          <div className="modal-footer">
+            <button type="button" className="btn danger" onClick={remove} disabled={busy}>
+              {deleting ? "削除中…" : "削除"}
+            </button>
+            <div className="modal-footer-actions">
+              <button type="button" className="btn secondary" onClick={onClose} disabled={busy}>
+                キャンセル
+              </button>
+              <button type="submit" form="edit-product-form" className="btn primary" disabled={busy}>
+                {saving ? "保存中…" : "保存"}
               </button>
             </div>
           </div>
-        </form>
+        )}
       </div>
     </div>
   );
@@ -682,6 +738,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ msg: "", error: false });
   const [modal, setModal] = useState(null);
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
+  const [confirmState, setConfirmState] = useState(null);
   const [compactCards, setCompactCards] = useState(
     () => localStorage.getItem("shabon-compact-cards") !== "0"
   );
@@ -709,6 +767,19 @@ export default function App() {
 
   const showToast = useCallback((msg, error = false) => {
     setToast({ msg, error });
+  }, []);
+
+  const askConfirm = useCallback(({ message, confirmLabel = "OK", danger = false }) => {
+    return new Promise((resolve) => {
+      setConfirmState({ message, confirmLabel, danger, resolve });
+    });
+  }, []);
+
+  const closeConfirm = useCallback((result) => {
+    setConfirmState((current) => {
+      current?.resolve(result);
+      return null;
+    });
   }, []);
 
   const checkAuth = useCallback(async () => {
@@ -761,7 +832,7 @@ export default function App() {
         `この${label}記録（${formatDelta(movementDelta(m))}）を取り消しますか？`,
         `在庫数が ${m.after_qty} 個 → ${m.before_qty} 個に戻ります。`,
       ].join("\n");
-      if (!confirm(msg)) return false;
+      if (!(await askConfirm({ message: msg, confirmLabel: "取り消す", danger: true }))) return false;
       setCancellingId(m.id);
       try {
         await api.cancelMovement(m.id);
@@ -775,12 +846,22 @@ export default function App() {
         setCancellingId(null);
       }
     },
-    [loadData, showToast]
+    [askConfirm, loadData, showToast]
   );
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  useEffect(() => {
+    if (!auth) return;
+    api
+      .categories()
+      .then((rows) => {
+        if (rows?.length) setCategories(rows);
+      })
+      .catch(() => {});
+  }, [auth]);
 
   useEffect(() => {
     if (auth) loadData();
@@ -817,7 +898,14 @@ export default function App() {
   }, [auth, tab, ledgerProductId, showToast]);
 
   async function doImport() {
-    if (!confirm("デスクトップの価格一覧 Excel から再取込しますか？\n在庫・履歴は保持されます。")) return;
+    if (
+      !(await askConfirm({
+        message: "デスクトップの価格一覧 Excel から再取込しますか？\n在庫・履歴は保持されます。",
+        confirmLabel: "再取込",
+      }))
+    ) {
+      return;
+    }
     try {
       const r = await api.importExcel();
       showToast(`${r.count} 品目を取込（新規 ${r.added}）`);
@@ -947,11 +1035,11 @@ export default function App() {
 
           {(tab === "stock" || tab === "active" || tab === "products" || tab === "ledger") && (
             <div className="category-filters">
-              {CATEGORY_FILTERS.map((c) => (
+              {categoryFilters(categories).map((c) => (
                 <button
                   key={c.id}
                   type="button"
-                  className={`category-chip ${categoryChipClass(c.id)} ${categoryFilter === c.id ? "active" : ""}`}
+                  className={`category-chip ${categoryChipClass(c.id, categories)} ${categoryFilter === c.id ? "active" : ""}`}
                   onClick={() => {
                     setCategoryFilter(c.id);
                     setSelectedProductId(null);
@@ -1042,6 +1130,7 @@ export default function App() {
                       product={p}
                       compact={compactCards}
                       selected={selectedProductId === p.id}
+                      categories={categories}
                       onSelect={toggleProductSelect}
                       onMove={(pr) => setModal({ type: "move", product: pr })}
                       onEdit={(pr) => setModal({ type: "edit", product: pr })}
@@ -1067,7 +1156,10 @@ export default function App() {
       )}
       {modal?.type === "edit" && (
         <EditModal
+          key={modal.product?.id ?? "new"}
           product={modal.product}
+          categories={categories}
+          askConfirm={askConfirm}
           onClose={() => setModal(null)}
           onSaved={loadData}
           toast={showToast}
@@ -1082,6 +1174,15 @@ export default function App() {
           cancellingId={cancellingId}
         />
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        message={confirmState?.message ?? ""}
+        confirmLabel={confirmState?.confirmLabel ?? "OK"}
+        danger={confirmState?.danger ?? false}
+        onConfirm={() => closeConfirm(true)}
+        onCancel={() => closeConfirm(false)}
+      />
 
       <Toast
         message={toast.msg}

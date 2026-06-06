@@ -18,6 +18,7 @@
   --cat-laundry-fill: #9ed4f5;
   --cat-face-fill: #f5b0cc;
   --cat-bath-fill: #c8b4f0;
+  --cat-haircare-fill: #f0c8a8;
   --cat-kitchen-fill: #98e0a8;
   --cat-hand-fill: #88dcd0;
   --cat-tooth-fill: #f5d090;
@@ -73,6 +74,8 @@ button, input, select {
 .btn.secondary { background: #e8eef3; color: var(--text); }
 .btn.secondary:hover { background: #d8e0e8; }
 .btn.danger { background: #fde8e8; color: #9b2226; }
+.btn.danger:hover:not(:disabled) { background: #f8d0d0; }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn.small { padding: 0.35rem 0.7rem; font-size: 0.82rem; }
 .btn.ghost {
   background: rgba(255,255,255,0.15);
@@ -530,6 +533,13 @@ button, input, select {
   background: var(--cat-bath-fill);
 }
 
+.category-chip.cat-haircare:not(.active) {
+  background: color-mix(in srgb, var(--cat-haircare-fill) 40%, #fff);
+}
+.category-chip.cat-haircare.active {
+  background: var(--cat-haircare-fill);
+}
+
 .category-chip.cat-kitchen:not(.active) {
   background: color-mix(in srgb, var(--cat-kitchen-fill) 40%, #fff);
 }
@@ -609,6 +619,11 @@ button, input, select {
 .product-card.cat-bath.low,
 .product-card.cat-bath.zero {
   background-color: var(--cat-bath-fill);
+}
+.product-card.cat-haircare,
+.product-card.cat-haircare.low,
+.product-card.cat-haircare.zero {
+  background-color: var(--cat-haircare-fill);
 }
 .product-card.cat-kitchen,
 .product-card.cat-kitchen.low,
@@ -792,6 +807,35 @@ button, input, select {
   margin-top: 1.25rem;
 }
 .modal-actions.spread { justify-content: space-between; align-items: center; }
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+}
+.modal-footer-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.confirm-backdrop {
+  z-index: 150;
+}
+.confirm-dialog {
+  max-width: 400px;
+}
+.confirm-dialog p {
+  margin: 0 0 1.25rem;
+  white-space: pre-line;
+  line-height: 1.55;
+}
 
 .empty {
   text-align: center;
