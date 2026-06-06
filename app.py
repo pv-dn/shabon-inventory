@@ -380,6 +380,68 @@ def api_cancel_movement(movement_id):
     return jsonify({"ok": True, "product": row_to_product(updated)})
 
 
+def reverse_movement_effect(conn, movement):
+    if movement["cancelled_at"]:
+        return None
+
+    product = conn.execute("SELECT * FROM products WHERE id = ?", (movement["product_id"],)).fetchone()
+    if not product:
+        raise ValueError("商品が見つかりません")
+
+    delta = movement["after_qty"] - movement["before_qty"]
+    new_qty = product["quantity"] - delta
+    if new_qty < 0:
+        raise ValueError(f"削除すると在庫が不足します（現在 {product['quantity']} 個）")
+
+    now = datetime.now().isoformat(timespec="seconds")
+    if delta != 0:
+        conn.execute(
+            "UPDATE products SET quantity = ?, updated_at = ? WHERE id = ?",
+            (new_qty, now, movement["product_id"]),
+        )
+        conn.execute(
+            """
+            UPDATE movements
+            SET before_qty = before_qty - ?, after_qty = after_qty - ?
+            WHERE product_id = ?
+              AND cancelled_at IS NULL
+              AND (created_at > ? OR (created_at = ? AND id > ?))
+            """,
+            (
+                delta,
+                delta,
+                movement["product_id"],
+                movement["created_at"],
+                movement["created_at"],
+                movement["id"],
+            ),
+        )
+    return movement["product_id"]
+
+
+@app.route("/api/movements/<int:movement_id>", methods=["DELETE"])
+def api_delete_movement(movement_id):
+    conn = get_connection()
+    movement = conn.execute("SELECT * FROM movements WHERE id = ?", (movement_id,)).fetchone()
+    if not movement:
+        conn.close()
+        return jsonify({"error": "履歴が見つかりません"}), 404
+
+    try:
+        product_id = reverse_movement_effect(conn, movement)
+    except ValueError as e:
+        conn.close()
+        return jsonify({"error": str(e)}), 400
+
+    conn.execute("DELETE FROM movements WHERE id = ?", (movement_id,))
+    conn.commit()
+    product = None
+    if product_id:
+        product = conn.execute("SELECT * FROM products WHERE id = ?", (product_id,)).fetchone()
+    conn.close()
+    return jsonify({"ok": True, "product": row_to_product(product) if product else None})
+
+
 @app.route("/api/products", methods=["POST"])
 def api_create_product():
     data = request.get_json(force=True)
