@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "./api";
 
 const TYPE_LABELS = { in: "入庫", out: "出庫", adjust: "棚卸" };
@@ -30,6 +30,37 @@ function categoryFilters(categories) {
 function formatDate(iso) {
   if (!iso) return "—";
   return iso.replace("T", " ").slice(0, 16);
+}
+
+function formatDateInMonth(iso) {
+  if (!iso) return "—";
+  return iso.replace("T", " ").slice(5, 16);
+}
+
+function monthKey(iso) {
+  return (iso || "").slice(0, 7);
+}
+
+function formatMonthLabel(key) {
+  const [year, month] = key.split("-");
+  return `${year}年${Number(month)}月`;
+}
+
+function groupMovementsByMonth(movements) {
+  const map = new Map();
+  for (const movement of movements) {
+    const key = monthKey(movement.created_at);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(movement);
+  }
+  return [...map.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([key, items]) => ({ key, label: formatMonthLabel(key), items }));
+}
+
+function movementsCollapseKey(movements) {
+  if (!movements.length) return "";
+  return movements.map((m) => m.id).join(",");
 }
 
 function formatPrice(v) {
@@ -496,6 +527,59 @@ function EditModal({ product, onClose, onSaved, toast, categories, askConfirm })
   );
 }
 
+function MovementHistoryRow({
+  movement,
+  showMemo,
+  showProduct,
+  groupedByMonth,
+  onCancel,
+  cancellingId,
+}) {
+  const delta = movementDelta(movement);
+  const cancelled = Boolean(movement.cancelled_at);
+
+  return (
+    <tr className={cancelled ? "movement-cancelled" : ""}>
+      <td>{groupedByMonth ? formatDateInMonth(movement.created_at) : formatDate(movement.created_at)}</td>
+      {showProduct && (
+        <>
+          <td>{movement.code}</td>
+          <td>{movement.name}</td>
+        </>
+      )}
+      <td>
+        {cancelled ? (
+          <span className="badge badge-cancelled">取り消し済</span>
+        ) : (
+          <span className={`badge badge-${movement.type}`}>{TYPE_LABELS[movement.type]}</span>
+        )}
+      </td>
+      <td className={`num delta ${delta > 0 ? "plus" : delta < 0 ? "minus" : "zero"}`}>
+        {formatDelta(delta)}
+      </td>
+      <td className="num">{movement.quantity}</td>
+      <td className="num">
+        {movement.before_qty} → {movement.after_qty}
+      </td>
+      {showMemo && <td>{movement.memo || ""}</td>}
+      {onCancel && (
+        <td>
+          {!cancelled && (
+            <button
+              type="button"
+              className="btn small danger"
+              disabled={cancellingId === movement.id}
+              onClick={() => onCancel(movement)}
+            >
+              {cancellingId === movement.id ? "処理中…" : "取り消し"}
+            </button>
+          )}
+        </td>
+      )}
+    </tr>
+  );
+}
+
 function MovementHistoryTable({
   movements,
   showMemo = true,
@@ -504,77 +588,85 @@ function MovementHistoryTable({
   cancellingId,
   emptyMessage = "この品目の増減履歴はまだありません",
 }) {
+  const monthGroups = useMemo(() => groupMovementsByMonth(movements), [movements]);
+  const collapseKey = movementsCollapseKey(movements);
+  const [collapsedMonths, setCollapsedMonths] = useState(() => new Set());
+
+  useEffect(() => {
+    const keys = monthGroups.map((group) => group.key);
+    setCollapsedMonths(new Set(keys.slice(1)));
+  }, [collapseKey, monthGroups]);
+
+  function toggleMonth(key) {
+    setCollapsedMonths((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
   if (movements.length === 0) {
     return <p className="empty">{emptyMessage}</p>;
   }
 
   return (
-    <div className="table-wrap ledger-table-wrap">
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>日時</th>
-            {showProduct && (
-              <>
-                <th>コード</th>
-                <th>商品名</th>
-              </>
+    <div className="history-month-groups">
+      {monthGroups.map((group) => {
+        const isCollapsed = collapsedMonths.has(group.key);
+        return (
+          <section key={group.key} className="history-month-group">
+            <button
+              type="button"
+              className={`history-month-toggle ${isCollapsed ? "collapsed" : ""}`}
+              onClick={() => toggleMonth(group.key)}
+              aria-expanded={!isCollapsed}
+            >
+              <span className="history-month-chevron" aria-hidden="true">
+                {isCollapsed ? "▸" : "▾"}
+              </span>
+              <span className="history-month-label">{group.label}</span>
+              <span className="history-month-count">{group.items.length}件</span>
+            </button>
+            {!isCollapsed && (
+              <div className="table-wrap ledger-table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>日時</th>
+                      {showProduct && (
+                        <>
+                          <th>コード</th>
+                          <th>商品名</th>
+                        </>
+                      )}
+                      <th>種別</th>
+                      <th className="num">増減</th>
+                      <th className="num">操作数</th>
+                      <th className="num">在庫（前→後）</th>
+                      {showMemo && <th>メモ</th>}
+                      {onCancel && <th>操作</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.items.map((movement) => (
+                      <MovementHistoryRow
+                        key={movement.id}
+                        movement={movement}
+                        showMemo={showMemo}
+                        showProduct={showProduct}
+                        groupedByMonth
+                        onCancel={onCancel}
+                        cancellingId={cancellingId}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
-            <th>種別</th>
-            <th className="num">増減</th>
-            <th className="num">操作数</th>
-            <th className="num">在庫（前→後）</th>
-            {showMemo && <th>メモ</th>}
-            {onCancel && <th>操作</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {movements.map((m) => {
-            const delta = movementDelta(m);
-            const cancelled = Boolean(m.cancelled_at);
-            return (
-              <tr key={m.id} className={cancelled ? "movement-cancelled" : ""}>
-                <td>{formatDate(m.created_at)}</td>
-                {showProduct && (
-                  <>
-                    <td>{m.code}</td>
-                    <td>{m.name}</td>
-                  </>
-                )}
-                <td>
-                  {cancelled ? (
-                    <span className="badge badge-cancelled">取り消し済</span>
-                  ) : (
-                    <span className={`badge badge-${m.type}`}>{TYPE_LABELS[m.type]}</span>
-                  )}
-                </td>
-                <td className={`num delta ${delta > 0 ? "plus" : delta < 0 ? "minus" : "zero"}`}>
-                  {formatDelta(delta)}
-                </td>
-                <td className="num">{m.quantity}</td>
-                <td className="num">
-                  {m.before_qty} → {m.after_qty}
-                </td>
-                {showMemo && <td>{m.memo || ""}</td>}
-                {onCancel && (
-                  <td>
-                    {!cancelled && (
-                      <button
-                        type="button"
-                        className="btn small danger"
-                        disabled={cancellingId === m.id}
-                        onClick={() => onCancel(m)}
-                      >
-                        {cancellingId === m.id ? "処理中…" : "取り消し"}
-                      </button>
-                    )}
-                  </td>
-                )}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -647,7 +739,7 @@ function ProductHistoryCorner({
                 </button>
               </div>
             </header>
-            <h3 className="ledger-history-title">増減履歴（新しい順）</h3>
+            <h3 className="ledger-history-title">増減履歴（月別・新しい順）</h3>
             {loadingMovements ? (
               <p className="panel-loading">履歴を読み込み中…</p>
             ) : (
