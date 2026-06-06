@@ -343,6 +343,54 @@ button, input, select {
   font-weight: 500;
 }
 
+.toolbar-detail-stock.stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.stepper-btn {
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 2px solid var(--blue);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--blue);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.stepper-btn:hover:not(:disabled) {
+  background: var(--blue-light);
+}
+
+.stepper-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.stepper-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.stepper-qty {
+  min-width: 2.5rem;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.stepper-qty small {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
 .toolbar-detail-actions {
   display: flex;
   gap: 0.35rem;

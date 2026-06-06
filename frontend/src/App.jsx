@@ -112,7 +112,29 @@ function LoginScreen({ onLogin }) {
   );
 }
 
-function CompactDetailPanel({ product, onClose, onMove, onEdit, onDetail }) {
+function CompactDetailPanel({ product, onClose, onMove, onEdit, onDetail, toast, onSaved }) {
+  const [busy, setBusy] = useState(false);
+
+  async function adjust(delta) {
+    if (busy) return;
+    if (delta < 0 && product.quantity <= 0) return;
+    setBusy(true);
+    try {
+      await api.createMovement({
+        product_id: product.id,
+        type: delta > 0 ? "in" : "out",
+        quantity: 1,
+        memo: "",
+      });
+      toast(delta > 0 ? "入庫しました" : "出庫しました");
+      onSaved();
+    } catch (err) {
+      toast(err.message, true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className={`toolbar-detail ${stockClass(product)}`}>
       <button type="button" className="toolbar-detail-close" onClick={onClose} aria-label="閉じる">
@@ -132,9 +154,29 @@ function CompactDetailPanel({ product, onClose, onMove, onEdit, onDetail }) {
             {product.case_qty ? ` / ケース ${product.case_qty}` : ""}
           </span>
         </div>
-        <div className="toolbar-detail-stock">
-          {product.quantity}
-          <small>個</small>
+        <div className="toolbar-detail-stock stepper">
+          <button
+            type="button"
+            className="stepper-btn"
+            onClick={() => adjust(-1)}
+            disabled={busy || product.quantity <= 0}
+            aria-label="1個減らす"
+          >
+            −
+          </button>
+          <span className="stepper-qty">
+            {product.quantity}
+            <small>個</small>
+          </span>
+          <button
+            type="button"
+            className="stepper-btn"
+            onClick={() => adjust(1)}
+            disabled={busy}
+            aria-label="1個増やす"
+          >
+            +
+          </button>
         </div>
         <div className="toolbar-detail-actions">
           <button type="button" className="btn small primary" onClick={() => onMove(product)}>
@@ -897,6 +939,8 @@ export default function App() {
                 onMove={(pr) => setModal({ type: "move", product: pr })}
                 onEdit={(pr) => setModal({ type: "edit", product: pr })}
                 onDetail={(pr) => setModal({ type: "detail", product: pr })}
+                toast={showToast}
+                onSaved={loadData}
               />
             )}
           </div>
