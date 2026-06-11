@@ -197,7 +197,13 @@ def load_products_from_json():
         return json.load(f)
 
 
-def sync_products_from_json():
+def sync_products_from_json(*, overwrite_existing: bool = False):
+    """products.json から DB へ同期。
+
+    通常起動時 (overwrite_existing=False): 新規コードのみ追加。アプリで編集した品目は保持。
+    Excel再取込時 (overwrite_existing=True): 既存品目の名前・規格なども JSON/Excel 内容で更新。
+    在庫数・補充下限・メモ・画像はいずれも上書きしない。
+    """
     items = load_products_from_json()
     if not items:
         return 0
@@ -209,6 +215,8 @@ def sync_products_from_json():
             "SELECT id FROM products WHERE code = ?", (item["code"],)
         ).fetchone()
         if existing:
+            if not overwrite_existing:
+                continue
             row = conn.execute(
                 "SELECT retail_price, member_price FROM products WHERE code = ?",
                 (item["code"],),

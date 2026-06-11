@@ -595,7 +595,7 @@ def api_import():
         PRODUCTS_JSON.parent.mkdir(parents=True, exist_ok=True)
         with PRODUCTS_JSON.open("w", encoding="utf-8") as f:
             json.dump(products, f, ensure_ascii=False, indent=2)
-        added = sync_products_from_json()
+        added = sync_products_from_json(overwrite_existing=True)
         return jsonify({"ok": True, "count": len(products), "added": added, "file": str(excel_path)})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
