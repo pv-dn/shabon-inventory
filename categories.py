@@ -1,5 +1,7 @@
 """品目ジャンル（洗濯・洗顔・お風呂・ヘアケア・台所・手洗い・歯磨き・その他）"""
 
+import json
+
 CATEGORIES = [
     ("laundry", "洗濯"),
     ("face", "洗顔"),
@@ -22,6 +24,59 @@ def category_label(category_id: str) -> str:
 
 def is_valid_category(value: str) -> bool:
     return value in CATEGORY_IDS
+
+
+def normalize_categories(cats) -> list[str]:
+    seen: list[str] = []
+    if not isinstance(cats, list):
+        cats = [cats]
+    for raw in cats:
+        cat = (raw or "").strip()
+        if cat and is_valid_category(cat) and cat not in seen:
+            seen.append(cat)
+    return seen if seen else [DEFAULT_CATEGORY]
+
+
+def parse_categories(raw) -> list[str]:
+    if raw is None:
+        return [DEFAULT_CATEGORY]
+    if isinstance(raw, list):
+        return normalize_categories(raw)
+    text = str(raw).strip()
+    if not text:
+        return [DEFAULT_CATEGORY]
+    if text.startswith("["):
+        try:
+            data = json.loads(text)
+            if isinstance(data, list):
+                return normalize_categories(data)
+        except json.JSONDecodeError:
+            pass
+    if is_valid_category(text):
+        return [text]
+    return [DEFAULT_CATEGORY]
+
+
+def serialize_categories(cats) -> str:
+    return json.dumps(normalize_categories(cats), ensure_ascii=False)
+
+
+def categories_label(cats) -> str:
+    return "・".join(category_label(cat) for cat in normalize_categories(cats))
+
+
+def resolve_categories_from_item(item: dict) -> list[str]:
+    if "categories" in item and item["categories"]:
+        if isinstance(item["categories"], list):
+            return normalize_categories(item["categories"])
+    raw = item.get("category")
+    if isinstance(raw, list):
+        return normalize_categories(raw)
+    if isinstance(raw, str) and raw.strip().startswith("["):
+        return parse_categories(raw)
+    if isinstance(raw, str) and is_valid_category(raw.strip()):
+        return [raw.strip()]
+    return [guess_category(item.get("name", ""), item.get("code", ""))]
 
 
 def guess_category(name: str, code: str = "") -> str:

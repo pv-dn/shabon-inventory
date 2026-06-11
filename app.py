@@ -3,9 +3,16 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory, session
 
-from categories import CATEGORIES, category_label, is_valid_category
-from config import APP_PASSWORD, SECRET_KEY
+from categories import (
+    CATEGORIES,
+    categories_label,
+    is_valid_category,
+    normalize_categories,
+    parse_categories,
+    serialize_categories,
+)
 from database import get_connection, init_db, resolve_category, sync_products_from_json
+from config import APP_PASSWORD, SECRET_KEY
 from db_compat import insert_returning_id
 
 APP_DIR = Path(__file__).parent
@@ -73,6 +80,8 @@ def api_logout():
 
 
 def row_to_product(row):
+    raw_cat = row["category"] if "category" in row.keys() else "other"
+    cats = parse_categories(raw_cat)
     return {
         "id": row["id"],
         "code": row["code"],
@@ -84,10 +93,9 @@ def row_to_product(row):
         "quantity": row["quantity"],
         "min_stock": row["min_stock"] or 0,
         "note": row["note"] or "",
-        "category": row["category"] if "category" in row.keys() else "other",
-        "category_label": category_label(
-            row["category"] if "category" in row.keys() else "other"
-        ),
+        "categories": cats,
+        "category": cats[0],
+        "category_label": categories_label(cats),
         "updated_at": row["updated_at"],
         "movement_count": row["movement_count"] if "movement_count" in row.keys() else 0,
         "last_movement_at": row["last_movement_at"] if "last_movement_at" in row.keys() else None,
@@ -141,14 +149,29 @@ def parse_product_payload(data, *, require_all=False):
             except ValueError:
                 errors.append(f"{label}は整数で入力してください")
 
-    if "category" in data or require_all:
-        raw = (data.get("category") or "").strip()
-        if require_all and not raw:
-            errors.append("ジャンルを選択してください")
-        elif raw and not is_valid_category(raw):
-            errors.append("ジャンルが不正です")
-        elif raw:
-            fields["category"] = raw
+    if "categories" in data or "category" in data or require_all:
+        cats = []
+        if "categories" in data:
+            raw_cats = data.get("categories")
+            if isinstance(raw_cats, list):
+                cats = normalize_categories(raw_cats)
+            elif isinstance(raw_cats, str) and raw_cats.strip():
+                cats = parse_categories(raw_cats.strip())
+        elif "category" in data:
+            raw = data.get("category")
+            if isinstance(raw, list):
+                cats = normalize_categories(raw)
+            else:
+                cats = parse_categories(str(raw or "").strip())
+
+        if require_all and not cats:
+            errors.append("ジャンルを1つ以上選択してください")
+        elif cats:
+            invalid = [c for c in cats if not is_valid_category(c)]
+            if invalid:
+                errors.append("ジャンルが不正です")
+            else:
+                fields["category"] = serialize_categories(cats)
 
     if errors:
         raise ValueError(errors[0])
@@ -210,8 +233,8 @@ def api_products():
     else:
         sql += " WHERE 1=1"
     if category and category != "all":
-        sql += " AND p.category = ?"
-        params.append(category)
+        sql += " AND p.category LIKE ?"
+        params.append(f'%"{category}"%')
     if q:
         sql += " AND (p.code LIKE ? OR p.name LIKE ? OR p.spec LIKE ?)"
         like = f"%{q}%"
@@ -456,7 +479,9 @@ def api_create_product():
         return jsonify({"error": "同じ商品コードが既に登録されています"}), 400
 
     now = datetime.now().isoformat(timespec="seconds")
-    cat = fields.get("category") or resolve_category({"name": fields["name"], "code": fields["code"]})
+    cat = fields.get("category") or resolve_category(
+        {"name": fields["name"], "code": fields["code"]}
+    )
     product_id = insert_returning_id(
         conn,
         """

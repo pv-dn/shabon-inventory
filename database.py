@@ -3,7 +3,13 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-from categories import DEFAULT_CATEGORY, guess_category, is_valid_category
+from categories import (
+    DEFAULT_CATEGORY,
+    guess_category,
+    parse_categories,
+    resolve_categories_from_item,
+    serialize_categories,
+)
 from db_compat import USE_POSTGRES, get_connection
 
 APP_DIR = Path(__file__).parent
@@ -80,7 +86,7 @@ CREATE INDEX IF NOT EXISTS idx_movements_created ON movements(created_at);
 def backfill_categories(conn):
     rows = conn.execute("SELECT id, code, name FROM products").fetchall()
     for row in rows:
-        cat = guess_category(row["name"], row["code"])
+        cat = serialize_categories([guess_category(row["name"], row["code"])])
         conn.execute("UPDATE products SET category = ? WHERE id = ?", (cat, row["id"]))
 
 
@@ -133,6 +139,19 @@ def migrate_add_cancelled_at(conn):
     conn.commit()
 
 
+def migrate_categories_to_json(conn):
+    rows = conn.execute("SELECT id, category FROM products").fetchall()
+    changed = False
+    for row in rows:
+        raw = row["category"] or ""
+        if not str(raw).strip().startswith("["):
+            serialized = serialize_categories(parse_categories(raw))
+            conn.execute("UPDATE products SET category = ? WHERE id = ?", (serialized, row["id"]))
+            changed = True
+    if changed:
+        conn.commit()
+
+
 def init_db():
     conn = get_connection()
     schema = POSTGRES_SCHEMA if USE_POSTGRES else SQLITE_SCHEMA
@@ -142,14 +161,12 @@ def init_db():
             conn.execute(stmt)
     migrate_add_category(conn)
     migrate_add_cancelled_at(conn)
+    migrate_categories_to_json(conn)
     conn.close()
 
 
 def resolve_category(item: dict) -> str:
-    raw = (item.get("category") or "").strip()
-    if is_valid_category(raw):
-        return raw
-    return guess_category(item.get("name", ""), item.get("code", ""))
+    return serialize_categories(resolve_categories_from_item(item))
 
 
 def load_products_from_json():

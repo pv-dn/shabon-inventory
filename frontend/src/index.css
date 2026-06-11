@@ -595,6 +595,43 @@ button, input, select {
   margin: 0 0 0.2rem;
   width: fit-content;
 }
+
+.category-tags.block {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  margin-bottom: 0.25rem;
+}
+
+.category-tags.inline {
+  margin-left: 0.5rem;
+}
+
+.category-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1rem;
+  margin-top: 0.4rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fafbfc;
+}
+
+.category-checkboxes label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.category-checkboxes input {
+  width: auto;
+  margin: 0;
+}
 .product-card:hover {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
   filter: brightness(1.03);

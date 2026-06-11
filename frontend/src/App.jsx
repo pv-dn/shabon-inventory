@@ -94,6 +94,31 @@ function categoryChipClass(categoryId, categories) {
   return categoryClass(categoryId, categories);
 }
 
+function productCategories(product) {
+  if (Array.isArray(product?.categories) && product.categories.length) {
+    return product.categories;
+  }
+  return [product?.category || "other"];
+}
+
+function categoryLabelFor(id, categories) {
+  return categories.find((c) => c.id === id)?.label || id;
+}
+
+function CategoryTags({ product, categories, inline = false, block = false }) {
+  const ids = productCategories(product);
+  if (!ids.length) return null;
+  return (
+    <span className={`category-tags${inline ? " inline" : ""}${block ? " block" : ""}`}>
+      {ids.map((id) => (
+        <span key={id} className="category-tag">
+          {categoryLabelFor(id, categories)}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function Toast({ message, error, onDone }) {
   useEffect(() => {
     const t = setTimeout(onDone, 3200);
@@ -205,9 +230,7 @@ function CompactDetailPanel({ product, onClose, onMove, onEdit, onDetail, toast,
         <div className="toolbar-detail-info">
           <span className="toolbar-detail-code">
             {product.code}
-            {product.category_label && (
-              <span className="category-tag inline">{product.category_label}</span>
-            )}
+            <CategoryTags product={product} categories={categories} inline />
           </span>
           <strong className="toolbar-detail-name">{product.name}</strong>
           <span className="toolbar-detail-meta">
@@ -256,10 +279,11 @@ function CompactDetailPanel({ product, onClose, onMove, onEdit, onDetail, toast,
 }
 
 function ProductCard({ product, compact, selected, categories, onSelect, onMove, onEdit, onDetail }) {
+  const primaryCategory = productCategories(product)[0];
   if (compact) {
     return (
       <article
-        className={`product-card compact ${categoryClass(product.category, categories)} ${stockClass(product)} ${selected ? "selected" : ""}`}
+        className={`product-card compact ${categoryClass(primaryCategory, categories)} ${stockClass(product)} ${selected ? "selected" : ""}`}
         onClick={() => onSelect(product.id)}
         onKeyDown={(e) => e.key === "Enter" && onSelect(product.id)}
         role="button"
@@ -267,9 +291,7 @@ function ProductCard({ product, compact, selected, categories, onSelect, onMove,
         title="クリックで上に詳細表示"
       >
         <div className="compact-name">
-          {product.category_label && (
-            <span className="category-tag">{product.category_label}</span>
-          )}
+          <CategoryTags product={product} categories={categories} block />
           {product.name}
         </div>
         <div className="compact-qty">
@@ -281,12 +303,10 @@ function ProductCard({ product, compact, selected, categories, onSelect, onMove,
   }
 
   return (
-    <article className={`product-card ${categoryClass(product.category, categories)} ${stockClass(product)}`}>
+    <article className={`product-card ${categoryClass(primaryCategory, categories)} ${stockClass(product)}`}>
       <div className="card-code">
         {product.code}
-        {product.category_label && (
-          <span className="category-tag inline">{product.category_label}</span>
-        )}
+        <CategoryTags product={product} categories={categories} inline />
       </div>
       <div className="card-name">{product.name}</div>
       <div className="card-meta">
@@ -389,7 +409,7 @@ function EditModal({ product, onClose, onSaved, toast, categories, askConfirm })
     member_price: product?.member_price ?? "",
     min_stock: product?.min_stock || 0,
     note: product?.note || "",
-    category: product?.category || "other",
+    categories: productCategories(product),
   });
   const [meta, setMeta] = useState("");
   const [movementCount, setMovementCount] = useState(0);
@@ -409,8 +429,20 @@ function EditModal({ product, onClose, onSaved, toast, categories, askConfirm })
     setForm((f) => ({ ...f, [k]: v }));
   }
 
+  function toggleCategory(id) {
+    setForm((f) => {
+      const cur = f.categories || [];
+      const next = cur.includes(id) ? cur.filter((c) => c !== id) : [...cur, id];
+      return { ...f, categories: next };
+    });
+  }
+
   async function save(e) {
     e.preventDefault();
+    if (!form.categories?.length) {
+      toast("ジャンルを1つ以上選択してください", true);
+      return;
+    }
     setSaving(true);
     try {
       if (isNew) await api.createProduct(form);
@@ -461,15 +493,21 @@ function EditModal({ product, onClose, onSaved, toast, categories, askConfirm })
               商品名 *
               <input value={form.name} onChange={(e) => set("name", e.target.value)} required disabled={busy} />
             </label>
-            <label>
-              ジャンル *
-              <select value={form.category} onChange={(e) => set("category", e.target.value)} required disabled={busy}>
+            <label className="full">
+              ジャンル *（複数選択可）
+              <div className="category-checkboxes">
                 {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
+                  <label key={c.id}>
+                    <input
+                      type="checkbox"
+                      checked={form.categories.includes(c.id)}
+                      onChange={() => toggleCategory(c.id)}
+                      disabled={busy}
+                    />
                     {c.label}
-                  </option>
+                  </label>
                 ))}
-              </select>
+              </div>
             </label>
             <label>
               規格
@@ -756,7 +794,7 @@ function ProductHistoryCorner({
   );
 }
 
-function DetailModal({ product, onClose, onEdit, onCancel, cancellingId }) {
+function DetailModal({ product, categories, onClose, onEdit, onCancel, cancellingId }) {
   const [movements, setMovements] = useState([]);
 
   useEffect(() => {
@@ -777,7 +815,10 @@ function DetailModal({ product, onClose, onEdit, onCancel, cancellingId }) {
         </h2>
         <dl className="detail-grid">
           <dt>ジャンル</dt>
-          <dd>{product.category_label || "—"}</dd>
+          <dd>
+            <CategoryTags product={product} categories={categories} />
+            {!productCategories(product).length && "—"}
+          </dd>
           <dt>規格</dt>
           <dd>{product.spec || "—"}</dd>
           <dt>ケース入数</dt>
@@ -1260,6 +1301,7 @@ export default function App() {
       {modal?.type === "detail" && (
         <DetailModal
           product={modal.product}
+          categories={categories}
           onClose={() => setModal(null)}
           onEdit={(p) => setModal({ type: "edit", product: p })}
           onCancel={handleCancelMovement}
