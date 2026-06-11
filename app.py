@@ -79,10 +79,20 @@ def api_logout():
     return jsonify({"ok": True})
 
 
-def row_to_product(row):
+MAX_IMAGE_URL_LEN = 300_000
+
+
+def product_image_url(row):
+    if "image_url" not in row.keys():
+        return ""
+    return row["image_url"] or ""
+
+
+def row_to_product(row, *, include_image=False):
     raw_cat = row["category"] if "category" in row.keys() else "other"
     cats = parse_categories(raw_cat)
-    return {
+    image_url = product_image_url(row)
+    data = {
         "id": row["id"],
         "code": row["code"],
         "name": row["name"],
@@ -96,10 +106,14 @@ def row_to_product(row):
         "categories": cats,
         "category": cats[0],
         "category_label": categories_label(cats),
+        "has_image": bool(image_url),
         "updated_at": row["updated_at"],
         "movement_count": row["movement_count"] if "movement_count" in row.keys() else 0,
         "last_movement_at": row["last_movement_at"] if "last_movement_at" in row.keys() else None,
     }
+    if include_image:
+        data["image_url"] = image_url
+    return data
 
 
 def parse_optional_price(value):
@@ -172,6 +186,17 @@ def parse_product_payload(data, *, require_all=False):
                 errors.append("ジャンルが不正です")
             else:
                 fields["category"] = serialize_categories(cats)
+
+    if "image_url" in data:
+        raw_image = data.get("image_url")
+        if raw_image in (None, ""):
+            fields["image_url"] = ""
+        elif not isinstance(raw_image, str) or not raw_image.startswith("data:image/"):
+            errors.append("画像データが不正です")
+        elif len(raw_image) > MAX_IMAGE_URL_LEN:
+            errors.append("画像が大きすぎます（300KB以下にしてください）")
+        else:
+            fields["image_url"] = raw_image
 
     if errors:
         raise ValueError(errors[0])
@@ -252,7 +277,7 @@ def api_product(product_id):
     conn.close()
     if not row:
         return jsonify({"error": "商品が見つかりません"}), 404
-    return jsonify(row_to_product(row))
+    return jsonify(row_to_product(row, include_image=True))
 
 
 @app.route("/api/products/<int:product_id>/movements")
@@ -486,8 +511,8 @@ def api_create_product():
         conn,
         """
         INSERT INTO products (
-            code, name, spec, case_qty, retail_price, member_price, min_stock, note, category, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            code, name, spec, case_qty, retail_price, member_price, min_stock, note, category, image_url, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             fields["code"],
@@ -499,13 +524,14 @@ def api_create_product():
             fields.get("min_stock", 0),
             fields.get("note", ""),
             cat,
+            fields.get("image_url", ""),
             now,
         ),
     )
     conn.commit()
     row = conn.execute("SELECT * FROM products WHERE id = ?", (product_id,)).fetchone()
     conn.close()
-    return jsonify(row_to_product(row)), 201
+    return jsonify(row_to_product(row, include_image=True)), 201
 
 
 @app.route("/api/products/<int:product_id>", methods=["PATCH"])
@@ -529,7 +555,7 @@ def api_update_product(product_id):
 
     if not fields:
         conn.close()
-        return jsonify(row_to_product(product))
+        return jsonify(row_to_product(product, include_image=True))
 
     sets = ", ".join(f"{k} = ?" for k in fields)
     vals = list(fields.values()) + [datetime.now().isoformat(timespec="seconds"), product_id]
@@ -537,7 +563,7 @@ def api_update_product(product_id):
     conn.commit()
     updated = conn.execute("SELECT * FROM products WHERE id = ?", (product_id,)).fetchone()
     conn.close()
-    return jsonify(row_to_product(updated))
+    return jsonify(row_to_product(updated, include_image=True))
 
 
 @app.route("/api/products/<int:product_id>", methods=["DELETE"])

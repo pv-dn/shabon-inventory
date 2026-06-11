@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "./api";
+import { compressImageFile } from "./imageUtils";
 
 const TYPE_LABELS = { in: "入庫", out: "出庫", adjust: "棚卸" };
 const TABS = [
@@ -198,7 +199,7 @@ function LoginScreen({ onLogin }) {
   );
 }
 
-function CompactDetailPanel({ product, categories, onClose, onMove, onEdit, onDetail, toast, onSaved }) {
+function CompactDetailPanel({ product, imageUrl, categories, onClose, onMove, onEdit, onDetail, toast, onSaved }) {
   const [busy, setBusy] = useState(false);
 
   async function adjust(delta) {
@@ -227,6 +228,11 @@ function CompactDetailPanel({ product, categories, onClose, onMove, onEdit, onDe
         ×
       </button>
       <div className="toolbar-detail-inner">
+        {imageUrl && (
+          <div className="toolbar-detail-image-wrap">
+            <img src={imageUrl} alt="" className="toolbar-detail-image" />
+          </div>
+        )}
         <div className="toolbar-detail-info">
           <span className="toolbar-detail-code">
             {product.code}
@@ -410,7 +416,10 @@ function EditModal({ product, onClose, onSaved, toast, categories, askConfirm })
     min_stock: product?.min_stock || 0,
     note: product?.note || "",
     categories: productCategories(product),
+    image_url: product?.image_url || "",
   });
+  const [imagePreview, setImagePreview] = useState(product?.image_url || "");
+  const [imageLoading, setImageLoading] = useState(false);
   const [meta, setMeta] = useState("");
   const [movementCount, setMovementCount] = useState(0);
   const [deleting, setDeleting] = useState(false);
@@ -422,6 +431,13 @@ function EditModal({ product, onClose, onSaved, toast, categories, askConfirm })
         setMovementCount(m.length);
         setMeta(`現在庫 ${product.quantity} / 履歴 ${m.length} 件`);
       });
+      if (product.has_image && !product.image_url) {
+        api.product(product.id).then((full) => {
+          const url = full.image_url || "";
+          setImagePreview(url);
+          setForm((f) => ({ ...f, image_url: url }));
+        });
+      }
     }
   }, [isNew, product]);
 
@@ -435,6 +451,27 @@ function EditModal({ product, onClose, onSaved, toast, categories, askConfirm })
       const next = cur.includes(id) ? cur.filter((c) => c !== id) : [...cur, id];
       return { ...f, categories: next };
     });
+  }
+
+  async function onImageFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImageLoading(true);
+    try {
+      const dataUrl = await compressImageFile(file);
+      setImagePreview(dataUrl);
+      setForm((f) => ({ ...f, image_url: dataUrl }));
+    } catch (err) {
+      toast(err.message, true);
+    } finally {
+      setImageLoading(false);
+    }
+  }
+
+  function clearImage() {
+    setImagePreview("");
+    setForm((f) => ({ ...f, image_url: "" }));
   }
 
   async function save(e) {
@@ -476,7 +513,7 @@ function EditModal({ product, onClose, onSaved, toast, categories, askConfirm })
     }
   }
 
-  const busy = deleting || saving;
+  const busy = deleting || saving || imageLoading;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -485,6 +522,33 @@ function EditModal({ product, onClose, onSaved, toast, categories, askConfirm })
         {meta && <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>{meta}</p>}
         <form id="edit-product-form" onSubmit={save}>
           <div className="form-grid">
+            <label className="full product-image-field">
+              品目画像
+              <div className="product-image-upload">
+                {imagePreview ? (
+                  <img src={imagePreview} alt="" className="product-image-preview" />
+                ) : (
+                  <div className="product-image-placeholder">画像なし</div>
+                )}
+                <div className="product-image-actions">
+                  <label className="btn secondary small product-image-pick">
+                    {imageLoading ? "処理中…" : imagePreview ? "画像を変更" : "画像を選ぶ"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={onImageFile}
+                      disabled={busy}
+                      hidden
+                    />
+                  </label>
+                  {imagePreview && (
+                    <button type="button" className="btn secondary small" onClick={clearImage} disabled={busy}>
+                      画像を削除
+                    </button>
+                  )}
+                </div>
+              </div>
+            </label>
             <label>
               商品コード *
               <input value={form.code} onChange={(e) => set("code", e.target.value)} required disabled={busy} />
@@ -796,10 +860,16 @@ function ProductHistoryCorner({
 
 function DetailModal({ product, categories, onClose, onEdit, onCancel, cancellingId }) {
   const [movements, setMovements] = useState([]);
+  const [imageUrl, setImageUrl] = useState(product.image_url || "");
 
   useEffect(() => {
     api.productMovements(product.id).then(setMovements);
-  }, [product.id]);
+    if (product.has_image && !product.image_url) {
+      api.product(product.id).then((full) => setImageUrl(full.image_url || ""));
+    } else {
+      setImageUrl(product.image_url || "");
+    }
+  }, [product.id, product.has_image, product.image_url]);
 
   async function handleCancel(m) {
     if (!onCancel) return;
@@ -813,6 +883,11 @@ function DetailModal({ product, categories, onClose, onEdit, onCancel, cancellin
         <h2>
           {product.code} {product.name}
         </h2>
+        {imageUrl && (
+          <div className="detail-image-wrap">
+            <img src={imageUrl} alt="" className="detail-image" />
+          </div>
+        )}
         <dl className="detail-grid">
           <dt>ジャンル</dt>
           <dd>
@@ -877,6 +952,7 @@ export default function App() {
     () => localStorage.getItem("shabon-compact-cards") !== "0"
   );
   const [selectedProductId, setSelectedProductId] = useState(null);
+  const [selectedProductImage, setSelectedProductImage] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [cancellingId, setCancellingId] = useState(null);
 
@@ -884,6 +960,27 @@ export default function App() {
     compactCards && selectedProductId
       ? products.find((p) => p.id === selectedProductId) ?? null
       : null;
+
+  useEffect(() => {
+    if (!selectedProductId) {
+      setSelectedProductImage("");
+      return;
+    }
+    const p = products.find((item) => item.id === selectedProductId);
+    if (!p?.has_image) {
+      setSelectedProductImage("");
+      return;
+    }
+    let cancelled = false;
+    api.product(selectedProductId).then((full) => {
+      if (!cancelled) setSelectedProductImage(full.image_url || "");
+    }).catch(() => {
+      if (!cancelled) setSelectedProductImage("");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProductId, products]);
 
   function toggleCompactCards() {
     setCompactCards((v) => {
@@ -1156,6 +1253,7 @@ export default function App() {
             {compactCards && (tab === "stock" || tab === "active") && selectedProduct && (
               <CompactDetailPanel
                 product={selectedProduct}
+                imageUrl={selectedProductImage}
                 categories={categories}
                 onClose={() => setSelectedProductId(null)}
                 onMove={(pr) => setModal({ type: "move", product: pr })}

@@ -139,6 +139,26 @@ def migrate_add_cancelled_at(conn):
     conn.commit()
 
 
+def migrate_add_image_url(conn):
+    if USE_POSTGRES:
+        cur = conn._conn.cursor()
+        cur.execute(
+            """
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'products' AND column_name = 'image_url'
+            """
+        )
+        if not cur.fetchone():
+            conn.execute("ALTER TABLE products ADD COLUMN image_url TEXT")
+        cur.close()
+    else:
+        try:
+            conn.execute("ALTER TABLE products ADD COLUMN image_url TEXT")
+        except sqlite3.OperationalError:
+            pass
+    conn.commit()
+
+
 def migrate_categories_to_json(conn):
     rows = conn.execute("SELECT id, category FROM products").fetchall()
     changed = False
@@ -161,6 +181,7 @@ def init_db():
             conn.execute(stmt)
     migrate_add_category(conn)
     migrate_add_cancelled_at(conn)
+    migrate_add_image_url(conn)
     migrate_categories_to_json(conn)
     conn.close()
 
