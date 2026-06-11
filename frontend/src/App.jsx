@@ -198,7 +198,7 @@ function LoginScreen({ onLogin }) {
   );
 }
 
-function CompactDetailPanel({ product, onClose, onMove, onEdit, onDetail, toast, onSaved }) {
+function CompactDetailPanel({ product, categories, onClose, onMove, onEdit, onDetail, toast, onSaved }) {
   const [busy, setBusy] = useState(false);
 
   async function adjust(delta) {
@@ -1156,6 +1156,7 @@ export default function App() {
             {compactCards && (tab === "stock" || tab === "active") && selectedProduct && (
               <CompactDetailPanel
                 product={selectedProduct}
+                categories={categories}
                 onClose={() => setSelectedProductId(null)}
                 onMove={(pr) => setModal({ type: "move", product: pr })}
                 onEdit={(pr) => setModal({ type: "edit", product: pr })}
