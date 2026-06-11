@@ -269,3 +269,13 @@ def sync_products_from_json(*, overwrite_existing: bool = False):
     conn.commit()
     conn.close()
     return added
+
+
+def seed_new_products_from_json() -> int:
+    """起動時用: JSON にあって DB にない品目だけ追加（アプリでの編集は維持）。"""
+    return sync_products_from_json(overwrite_existing=False)
+
+
+def merge_products_from_json() -> int:
+    """Excel再取込用: 名前・規格などマスタ情報を JSON/Excel 内容で更新。"""
+    return sync_products_from_json(overwrite_existing=True)

@@ -5,12 +5,12 @@ from waitress import serve
 
 from app import app
 from config import HOST, OPEN_BROWSER, PORT
-from database import init_db, sync_products_from_json
+from database import init_db, seed_new_products_from_json
 
 
 def main():
     init_db()
-    sync_products_from_json()
+    seed_new_products_from_json()
 
     display_host = "127.0.0.1" if HOST in ("0.0.0.0", "::") else HOST
     url = f"http://{display_host}:{PORT}"

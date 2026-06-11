@@ -40,12 +40,12 @@ if errorlevel 1 (
 )
 
 echo [3/6] Initializing database...
-"%PY%" -c "from database import init_db, sync_products_from_json; init_db(); sync_products_from_json()"
+"%PY%" -c "from database import init_db, seed_new_products_from_json; init_db(); seed_new_products_from_json()"
 
 echo [4/6] Importing Excel if available...
 "%PY%" import_excel.py
 if not errorlevel 1 (
-    "%PY%" -c "from database import sync_products_from_json; sync_products_from_json()"
+    "%PY%" -c "from database import merge_products_from_json; merge_products_from_json()"
 )
 
 echo [5/6] Building React UI...

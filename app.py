@@ -11,7 +11,7 @@ from categories import (
     parse_categories,
     serialize_categories,
 )
-from database import get_connection, init_db, resolve_category, sync_products_from_json
+from database import get_connection, init_db, merge_products_from_json, resolve_category, seed_new_products_from_json
 from config import APP_PASSWORD, SECRET_KEY
 from db_compat import insert_returning_id
 
@@ -35,7 +35,7 @@ def disable_static_cache(response):
 def ensure_db():
     if not getattr(app, "_db_ready", False):
         init_db()
-        sync_products_from_json()
+        seed_new_products_from_json()
         app._db_ready = True
 
 
@@ -595,7 +595,7 @@ def api_import():
         PRODUCTS_JSON.parent.mkdir(parents=True, exist_ok=True)
         with PRODUCTS_JSON.open("w", encoding="utf-8") as f:
             json.dump(products, f, ensure_ascii=False, indent=2)
-        added = sync_products_from_json(overwrite_existing=True)
+        added = merge_products_from_json()
         return jsonify({"ok": True, "count": len(products), "added": added, "file": str(excel_path)})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
