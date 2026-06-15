@@ -828,7 +828,37 @@ button, input, select {
 .data-table th {
   background: #f4f8fb;
   font-weight: 600;
+}
+
+.data-table-sticky-head {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.data-table-sticky-head thead th {
   position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f4f8fb;
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.history-table-wrap {
+  overflow: visible;
+}
+
+.history-month-row td {
+  padding: 0;
+  background: #f4f8fb;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-month-row .history-month-toggle {
+  border: none;
+  border-radius: 0;
+}
+
+.ledger-table-wrap .data-table-sticky-head thead th {
   top: 0;
 }
 .data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -1055,7 +1085,7 @@ button, input, select {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1rem 1.1rem;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .ledger-detail-header {

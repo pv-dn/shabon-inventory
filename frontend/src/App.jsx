@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "./api";
 import { compressImageFile } from "./imageUtils";
 
@@ -697,6 +697,16 @@ function MovementHistoryRow({
   );
 }
 
+function historyColumnCount({ selectable, showProduct, showMemo, onCancel }) {
+  let count = 1;
+  if (selectable) count += 1;
+  if (showProduct) count += 2;
+  count += 4;
+  if (showMemo) count += 1;
+  if (onCancel) count += 1;
+  return count;
+}
+
 function MovementHistoryTable({
   movements,
   showMemo = true,
@@ -757,6 +767,8 @@ function MovementHistoryTable({
     return <p className="empty">{emptyMessage}</p>;
   }
 
+  const columnCount = historyColumnCount({ selectable, showProduct, showMemo, onCancel });
+
   return (
     <div className="history-month-groups">
       {selectable && onBulkDelete && (
@@ -775,45 +787,49 @@ function MovementHistoryTable({
           </button>
         </div>
       )}
-      {monthGroups.map((group) => {
-        const isCollapsed = collapsedMonths.has(group.key);
-        return (
-          <section key={group.key} className="history-month-group">
-            <button
-              type="button"
-              className={`history-month-toggle ${isCollapsed ? "collapsed" : ""}`}
-              onClick={() => toggleMonth(group.key)}
-              aria-expanded={!isCollapsed}
-            >
-              <span className="history-month-chevron" aria-hidden="true">
-                {isCollapsed ? "▸" : "▾"}
-              </span>
-              <span className="history-month-label">{group.label}</span>
-              <span className="history-month-count">{group.items.length}件</span>
-            </button>
-            {!isCollapsed && (
-              <div className="table-wrap ledger-table-wrap">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      {selectable && <th className="history-select-cell" aria-label="選択" />}
-                      <th>日時</th>
-                      {showProduct && (
-                        <>
-                          <th>コード</th>
-                          <th>商品名</th>
-                        </>
-                      )}
-                      <th>種別</th>
-                      <th className="num">増減</th>
-                      <th className="num">操作数</th>
-                      <th className="num">在庫（前→後）</th>
-                      {showMemo && <th>メモ</th>}
-                      {onCancel && <th>操作</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {group.items.map((movement) => (
+      <div className="table-wrap history-table-wrap">
+        <table className="data-table data-table-sticky-head">
+          <thead>
+            <tr>
+              {selectable && <th className="history-select-cell" aria-label="選択" />}
+              <th>日時</th>
+              {showProduct && (
+                <>
+                  <th>コード</th>
+                  <th>商品名</th>
+                </>
+              )}
+              <th>種別</th>
+              <th className="num">増減</th>
+              <th className="num">操作数</th>
+              <th className="num">在庫（前→後）</th>
+              {showMemo && <th>メモ</th>}
+              {onCancel && <th>操作</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {monthGroups.map((group) => {
+              const isCollapsed = collapsedMonths.has(group.key);
+              return (
+                <Fragment key={group.key}>
+                  <tr className="history-month-row">
+                    <td colSpan={columnCount}>
+                      <button
+                        type="button"
+                        className={`history-month-toggle ${isCollapsed ? "collapsed" : ""}`}
+                        onClick={() => toggleMonth(group.key)}
+                        aria-expanded={!isCollapsed}
+                      >
+                        <span className="history-month-chevron" aria-hidden="true">
+                          {isCollapsed ? "▸" : "▾"}
+                        </span>
+                        <span className="history-month-label">{group.label}</span>
+                        <span className="history-month-count">{group.items.length}件</span>
+                      </button>
+                    </td>
+                  </tr>
+                  {!isCollapsed &&
+                    group.items.map((movement) => (
                       <MovementHistoryRow
                         key={movement.id}
                         movement={movement}
@@ -827,13 +843,12 @@ function MovementHistoryTable({
                         cancellingId={cancellingId}
                       />
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        );
-      })}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
