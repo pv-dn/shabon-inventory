@@ -39,6 +39,8 @@ export const api = {
     request("/api/movements", { method: "POST", body: JSON.stringify(body) }),
   cancelMovement: (id) =>
     request(`/api/movements/${id}/cancel`, { method: "POST" }),
+  bulkCancelMovements: (ids) =>
+    request("/api/movements/bulk-cancel", { method: "POST", body: JSON.stringify({ ids }) }),
   createProduct: (body) =>
     request("/api/products", { method: "POST", body: JSON.stringify(body) }),
   updateProduct: (id, body) =>

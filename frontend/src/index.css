@@ -1125,6 +1125,40 @@ button, input, select {
   min-height: 0;
 }
 
+.history-bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.history-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+.history-select-cell {
+  width: 2.4rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.history-select-cell input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
 .history-month-groups {
   display: flex;
   flex-direction: column;

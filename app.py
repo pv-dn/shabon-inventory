@@ -373,29 +373,20 @@ def api_create_movement():
     return jsonify({"ok": True, "product": row_to_product(updated)})
 
 
-@app.route("/api/movements/<int:movement_id>/cancel", methods=["POST"])
-def api_cancel_movement(movement_id):
-    conn = get_connection()
-    movement = conn.execute("SELECT * FROM movements WHERE id = ?", (movement_id,)).fetchone()
-    if not movement:
-        conn.close()
-        return jsonify({"error": "履歴が見つかりません"}), 404
+def _cancel_movement(conn, movement):
+    """履歴1件を取り消し削除（コミットは呼び出し側）。"""
+    movement_id = movement["id"]
     if movement["cancelled_at"]:
-        conn.close()
-        return jsonify({"error": "この履歴は既に取り消されています"}), 400
+        raise ValueError("この履歴は既に取り消されています")
 
     product = conn.execute("SELECT * FROM products WHERE id = ?", (movement["product_id"],)).fetchone()
     if not product:
-        conn.close()
-        return jsonify({"error": "商品が見つかりません"}), 404
+        raise ValueError("商品が見つかりません")
 
     delta = movement["after_qty"] - movement["before_qty"]
     new_qty = product["quantity"] - delta
     if new_qty < 0:
-        conn.close()
-        return jsonify(
-            {"error": f"取り消すと在庫が不足します（現在 {product['quantity']} 個）"}
-        ), 400
+        raise ValueError(f"取り消すと在庫が不足します（現在 {product['quantity']} 個）")
 
     now = datetime.now().isoformat(timespec="seconds")
     if delta != 0:
@@ -422,10 +413,62 @@ def api_cancel_movement(movement_id):
         )
 
     conn.execute("DELETE FROM movements WHERE id = ?", (movement_id,))
-    conn.commit()
+
+
+@app.route("/api/movements/<int:movement_id>/cancel", methods=["POST"])
+def api_cancel_movement(movement_id):
+    conn = get_connection()
+    movement = conn.execute("SELECT * FROM movements WHERE id = ?", (movement_id,)).fetchone()
+    if not movement:
+        conn.close()
+        return jsonify({"error": "履歴が見つかりません"}), 404
+
+    try:
+        _cancel_movement(conn, movement)
+        conn.commit()
+    except ValueError as e:
+        conn.rollback()
+        conn.close()
+        return jsonify({"error": str(e)}), 400
+
     updated = conn.execute("SELECT * FROM products WHERE id = ?", (movement["product_id"],)).fetchone()
     conn.close()
     return jsonify({"ok": True, "product": row_to_product(updated)})
+
+
+@app.route("/api/movements/bulk-cancel", methods=["POST"])
+def api_bulk_cancel_movements():
+    data = request.get_json(force=True) or {}
+    raw_ids = data.get("ids")
+    if not isinstance(raw_ids, list) or not raw_ids:
+        return jsonify({"error": "削除する履歴を選択してください"}), 400
+    try:
+        ids = list(dict.fromkeys(int(i) for i in raw_ids))
+    except (TypeError, ValueError):
+        return jsonify({"error": "履歴IDが不正です"}), 400
+
+    conn = get_connection()
+    placeholders = ",".join("?" * len(ids))
+    rows = conn.execute(
+        f"SELECT * FROM movements WHERE id IN ({placeholders}) AND cancelled_at IS NULL",
+        ids,
+    ).fetchall()
+    if len(rows) != len(ids):
+        conn.close()
+        return jsonify({"error": "一部の履歴が見つかりません"}), 404
+
+    sorted_rows = sorted(rows, key=lambda r: (r["created_at"], r["id"]), reverse=True)
+    try:
+        for movement in sorted_rows:
+            _cancel_movement(conn, movement)
+        conn.commit()
+    except ValueError as e:
+        conn.rollback()
+        conn.close()
+        return jsonify({"error": str(e)}), 400
+
+    conn.close()
+    return jsonify({"ok": True, "deleted": len(sorted_rows)})
 
 
 def reverse_movement_effect(conn, movement):

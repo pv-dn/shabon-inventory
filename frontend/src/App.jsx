@@ -634,6 +634,9 @@ function MovementHistoryRow({
   showMemo,
   showProduct,
   groupedByMonth,
+  selectable,
+  selected,
+  onToggleSelect,
   onCancel,
   cancellingId,
 }) {
@@ -642,6 +645,18 @@ function MovementHistoryRow({
 
   return (
     <tr className={cancelled ? "movement-cancelled" : ""}>
+      {selectable && (
+        <td className="history-select-cell">
+          {!cancelled && (
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={() => onToggleSelect(movement.id)}
+              aria-label={`${movement.name || movement.code || "履歴"}を選択`}
+            />
+          )}
+        </td>
+      )}
       <td>{groupedByMonth ? formatDateInMonth(movement.created_at) : formatDate(movement.created_at)}</td>
       {showProduct && (
         <>
@@ -686,18 +701,29 @@ function MovementHistoryTable({
   movements,
   showMemo = true,
   showProduct = false,
+  selectable = false,
   onCancel,
+  onBulkDelete,
   cancellingId,
+  bulkDeleting = false,
   emptyMessage = "この品目の増減履歴はまだありません",
 }) {
   const monthGroups = useMemo(() => groupMovementsByMonth(movements), [movements]);
   const collapseKey = movementsCollapseKey(movements);
   const [collapsedMonths, setCollapsedMonths] = useState(() => new Set());
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
 
   useEffect(() => {
     const keys = monthGroups.map((group) => group.key);
     setCollapsedMonths(new Set(keys.slice(1)));
   }, [collapseKey, monthGroups]);
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [collapseKey]);
+
+  const allIds = useMemo(() => movements.map((m) => m.id), [movements]);
+  const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds.has(id));
 
   function toggleMonth(key) {
     setCollapsedMonths((prev) => {
@@ -708,12 +734,47 @@ function MovementHistoryTable({
     });
   }
 
+  function toggleSelect(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelectedIds(allSelected ? new Set() : new Set(allIds));
+  }
+
+  async function deleteSelected() {
+    if (!selectedIds.size || !onBulkDelete) return;
+    await onBulkDelete([...selectedIds]);
+    setSelectedIds(new Set());
+  }
+
   if (movements.length === 0) {
     return <p className="empty">{emptyMessage}</p>;
   }
 
   return (
     <div className="history-month-groups">
+      {selectable && onBulkDelete && (
+        <div className="history-bulk-actions">
+          <label className="history-select-all">
+            <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} />
+            すべて選択
+          </label>
+          <button
+            type="button"
+            className="btn small danger"
+            disabled={selectedIds.size === 0 || bulkDeleting}
+            onClick={deleteSelected}
+          >
+            {bulkDeleting ? "削除中…" : `選択を削除（${selectedIds.size}件）`}
+          </button>
+        </div>
+      )}
       {monthGroups.map((group) => {
         const isCollapsed = collapsedMonths.has(group.key);
         return (
@@ -735,6 +796,7 @@ function MovementHistoryTable({
                 <table className="data-table">
                   <thead>
                     <tr>
+                      {selectable && <th className="history-select-cell" aria-label="選択" />}
                       <th>日時</th>
                       {showProduct && (
                         <>
@@ -758,6 +820,9 @@ function MovementHistoryTable({
                         showMemo={showMemo}
                         showProduct={showProduct}
                         groupedByMonth
+                        selectable={selectable}
+                        selected={selectedIds.has(movement.id)}
+                        onToggleSelect={toggleSelect}
                         onCancel={onCancel}
                         cancellingId={cancellingId}
                       />
@@ -782,7 +847,9 @@ function ProductHistoryCorner({
   onMove,
   onDetail,
   onCancel,
+  onBulkDelete,
   cancellingId,
+  bulkDeleting,
 }) {
   const selected = products.find((p) => p.id === selectedId) ?? null;
 
@@ -847,8 +914,11 @@ function ProductHistoryCorner({
             ) : (
               <MovementHistoryTable
                 movements={movements}
+                selectable
                 onCancel={onCancel}
+                onBulkDelete={onBulkDelete}
                 cancellingId={cancellingId}
+                bulkDeleting={bulkDeleting}
               />
             )}
           </>
@@ -955,6 +1025,7 @@ export default function App() {
   const [selectedProductImage, setSelectedProductImage] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [cancellingId, setCancellingId] = useState(null);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const selectedProduct =
     compactCards && selectedProductId
@@ -1074,6 +1145,27 @@ export default function App() {
         return false;
       } finally {
         setCancellingId(null);
+      }
+    },
+    [askConfirm, loadData, showToast]
+  );
+
+  const handleBulkCancelMovements = useCallback(
+    async (ids) => {
+      const msg = [
+        `${ids.length}件の履歴を取り消して削除しますか？`,
+        "在庫数がそれぞれ元に戻ります。",
+      ].join("\n");
+      if (!(await askConfirm({ message: msg, confirmLabel: "削除", danger: true }))) return;
+      setBulkDeleting(true);
+      try {
+        const result = await api.bulkCancelMovements(ids);
+        showToast(`${result.deleted}件の履歴を削除しました`);
+        await loadData();
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        setBulkDeleting(false);
       }
     },
     [askConfirm, loadData, showToast]
@@ -1297,7 +1389,9 @@ export default function App() {
               onMove={(pr) => setModal({ type: "move", product: pr })}
               onDetail={(pr) => setModal({ type: "detail", product: pr })}
               onCancel={handleCancelMovement}
+              onBulkDelete={handleBulkCancelMovements}
               cancellingId={cancellingId}
+              bulkDeleting={bulkDeleting}
             />
           )}
 
@@ -1305,9 +1399,12 @@ export default function App() {
             <MovementHistoryTable
               movements={movements}
               showProduct
+              selectable
               emptyMessage="履歴がありません"
               onCancel={handleCancelMovement}
+              onBulkDelete={handleBulkCancelMovements}
               cancellingId={cancellingId}
+              bulkDeleting={bulkDeleting}
             />
           )}
 
