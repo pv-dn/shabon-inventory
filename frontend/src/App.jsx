@@ -1066,7 +1066,7 @@ export default function App() {
       setCancellingId(m.id);
       try {
         await api.cancelMovement(m.id);
-        showToast("履歴を取り消しました");
+        showToast("履歴を取り消して削除しました");
         await loadData();
         return true;
       } catch (err) {

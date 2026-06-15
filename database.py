@@ -183,7 +183,14 @@ def init_db():
     migrate_add_cancelled_at(conn)
     migrate_add_image_url(conn)
     migrate_categories_to_json(conn)
+    purge_cancelled_movements(conn)
     conn.close()
+
+
+def purge_cancelled_movements(conn):
+    """取り消し済み履歴を削除（在庫は取り消し時に既に戻している）。"""
+    conn.execute("DELETE FROM movements WHERE cancelled_at IS NOT NULL")
+    conn.commit()
 
 
 def resolve_category(item: dict) -> str:

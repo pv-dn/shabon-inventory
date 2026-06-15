@@ -288,7 +288,7 @@ def api_product_movements(product_id):
         SELECT m.*, p.code, p.name
         FROM movements m
         JOIN products p ON p.id = m.product_id
-        WHERE m.product_id = ?
+        WHERE m.product_id = ? AND m.cancelled_at IS NULL
         ORDER BY m.created_at DESC, m.id DESC
         LIMIT 200
         """,
@@ -306,7 +306,7 @@ def api_movements():
         SELECT m.*, p.code, p.name, p.spec
         FROM movements m
         JOIN products p ON p.id = m.product_id
-        WHERE 1=1
+        WHERE m.cancelled_at IS NULL
     """
     params = []
     if q:
@@ -421,7 +421,7 @@ def api_cancel_movement(movement_id):
             ),
         )
 
-    conn.execute("UPDATE movements SET cancelled_at = ? WHERE id = ?", (now, movement_id))
+    conn.execute("DELETE FROM movements WHERE id = ?", (movement_id,))
     conn.commit()
     updated = conn.execute("SELECT * FROM products WHERE id = ?", (movement["product_id"],)).fetchone()
     conn.close()
