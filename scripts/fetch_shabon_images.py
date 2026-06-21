@@ -11,7 +11,7 @@ def main():
     batch = 0
     while True:
         batch += 1
-        stats = fill_missing_product_images_batch(conn, limit=12)
+        stats = fill_missing_product_images_batch(conn, limit=12, overwrite=True)
         total_updated += stats["updated"]
         total_skipped += stats["skipped"]
         print(

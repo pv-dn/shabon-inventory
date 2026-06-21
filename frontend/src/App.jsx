@@ -1257,7 +1257,7 @@ export default function App() {
     if (
       !(await askConfirm({
         message:
-          "公式通販（shabon.com）から、画像が未設定の品目だけ自動取得します。\nすでに登録済みの画像は変更しません。",
+          "公式通販（shabon.com）から商品写真を取得します。\nロゴ画像など既存の画像も、正しい商品写真に差し替えます。",
         confirmLabel: "開始",
       }))
     ) {
@@ -1268,7 +1268,7 @@ export default function App() {
     let totalSkipped = 0;
     try {
       for (;;) {
-        const r = await api.fetchOfficialImages(12);
+        const r = await api.fetchOfficialImages(12, true);
         totalUpdated += r.updated;
         totalSkipped += r.skipped;
         if (r.done) {

@@ -12,6 +12,10 @@ from typing import Callable
 from PIL import Image
 
 SHABON_ITEM_URL = "https://www.shabon.com/shop/item/{code}"
+PRODUCT_IMAGE_URLS = (
+    "https://www.shabon.com/shop/f/resources/images/Product/{code}/main.jpg",
+    "https://www.shabon.com/shop/resources/images/Product/{code}/main.jpg",
+)
 USER_AGENT = "ShabonInventory/1.0 (+internal store tool)"
 MAX_IMAGE_URL_LEN = 300_000
 FETCH_DELAY_SEC = 0.6
@@ -33,21 +37,62 @@ def _fetch_html(url: str) -> str | None:
         return None
 
 
-def extract_image_url(html: str) -> str | None:
+def _normalize_url(url: str) -> str:
+    url = url.strip()
+    if url.startswith("//"):
+        return "https:" + url
+    if url.startswith("/"):
+        return "https://www.shabon.com" + url
+    return url
+
+
+def _is_generic_image_url(url: str) -> bool:
+    lower = url.lower()
+    return any(
+        token in lower
+        for token in (
+            "ogp.png",
+            "/common/",
+            "logo",
+            "drawer_item",
+            "img_fax",
+            "side_cart",
+            "globalsign",
+        )
+    )
+
+
+def product_image_candidates(code: str) -> list[str]:
+    code = str(code or "").strip()
+    if not code:
+        return []
+    return [_normalize_url(t.format(code=code)) for t in PRODUCT_IMAGE_URLS]
+
+
+def extract_image_url(html: str, code: str) -> str | None:
+    code = str(code or "").strip()
+    if code:
+        m = re.search(
+            rf'https?://[^"\']+/Product/{re.escape(code)}/main\.jpg',
+            html,
+            re.I,
+        )
+        if m:
+            return m.group(0)
+
+    for src in re.findall(r'<img[^>]+src="([^"]+)"', html, re.I):
+        url = _normalize_url(src)
+        if code and f"/product/{code.lower()}/" in url.lower() and "main.jpg" in url.lower():
+            return url
+        if code and f"/Product/{code}/" in url and not _is_generic_image_url(url):
+            return url
+
     m = re.search(r'property="og:image"\s+content="([^"]+)"', html)
     if m:
-        return m.group(1).strip()
-    m = re.search(r'content="([^"]+)"\s+property="og:image"', html)
-    if m:
-        return m.group(1).strip()
-    for src in re.findall(r'<img[^>]+src="([^"]+)"', html, re.I):
-        if "item" in src.lower() or "product" in src.lower():
-            if src.startswith("//"):
-                return "https:" + src
-            if src.startswith("/"):
-                return "https://www.shabon.com" + src
-            if src.startswith("http"):
-                return src
+        url = _normalize_url(m.group(1))
+        if not _is_generic_image_url(url) and (not code or f"/Product/{code}/" in url):
+            return url
+
     return None
 
 
@@ -100,24 +145,47 @@ def fetch_official_image_for_code(code: str) -> tuple[str | None, str | None]:
     if not code:
         return None, "商品コードなし"
 
+    for url in product_image_candidates(code):
+        raw = download_image_bytes(url)
+        if raw:
+            data_url = compress_to_data_url(raw)
+            if data_url:
+                return data_url, None
+
     page_url = SHABON_ITEM_URL.format(code=code)
     html = _fetch_html(page_url)
-    if not html:
+    if html:
+        img_url = extract_image_url(html, code)
+        if img_url:
+            raw = download_image_bytes(img_url)
+            if raw:
+                data_url = compress_to_data_url(raw)
+                if data_url:
+                    return data_url, None
+    else:
         return None, "公式HPにページなし"
 
-    img_url = extract_image_url(html)
-    if not img_url:
-        return None, "画像URLが見つかりません"
+    return None, "商品画像が見つかりません"
 
-    raw = download_image_bytes(img_url)
-    if not raw:
-        return None, "画像の取得に失敗"
 
-    data_url = compress_to_data_url(raw)
-    if not data_url:
-        return None, "画像の圧縮に失敗"
-
-    return data_url, None
+def _products_needing_images_sql(overwrite: bool) -> str:
+    if overwrite:
+        return """
+        SELECT id, code, name
+        FROM products
+        WHERE image_url IS NULL
+           OR image_url = ''
+           OR image_url NOT LIKE ?
+        ORDER BY code
+        LIMIT ?
+        """
+    return """
+        SELECT id, code, name
+        FROM products
+        WHERE image_url IS NULL OR image_url = ''
+        ORDER BY code
+        LIMIT ?
+        """
 
 
 def fill_missing_product_images_batch(
@@ -125,26 +193,36 @@ def fill_missing_product_images_batch(
     *,
     limit: int = 15,
     delay_sec: float = FETCH_DELAY_SEC,
+    overwrite: bool = False,
 ) -> dict:
-    """image_url が空の品目から limit 件だけ取得（タイムアウト回避用）。"""
+    """公式HPから商品画像を取得。overwrite=True ならロゴ等の既存画像も差し替え。"""
     limit = max(1, min(int(limit), 30))
-    rows = conn.execute(
-        """
-        SELECT id, code, name
-        FROM products
-        WHERE image_url IS NULL OR image_url = ''
-        ORDER BY code
-        LIMIT ?
-        """,
-        (limit,),
-    ).fetchall()
+    if overwrite:
+        rows = conn.execute(
+            _products_needing_images_sql(True),
+            (f"{UNAVAILABLE_PREFIX}%", limit),
+        ).fetchall()
+        remaining_row = conn.execute(
+            f"""
+            SELECT COUNT(*) AS c FROM products
+            WHERE image_url IS NULL
+               OR image_url = ''
+               OR image_url NOT LIKE ?
+            """,
+            (f"{UNAVAILABLE_PREFIX}%",),
+        ).fetchone()
+    else:
+        rows = conn.execute(
+            _products_needing_images_sql(False),
+            (limit,),
+        ).fetchall()
+        remaining_row = conn.execute(
+            """
+            SELECT COUNT(*) AS c FROM products
+            WHERE image_url IS NULL OR image_url = ''
+            """
+        ).fetchone()
 
-    remaining_row = conn.execute(
-        """
-        SELECT COUNT(*) AS c FROM products
-        WHERE image_url IS NULL OR image_url = ''
-        """
-    ).fetchone()
     remaining_before = remaining_row["c"]
 
     from datetime import datetime
@@ -155,6 +233,7 @@ def fill_missing_product_images_batch(
         "updated": 0,
         "skipped": 0,
         "remaining_before": remaining_before,
+        "overwrite": overwrite,
         "failed": [],
     }
 
@@ -184,12 +263,23 @@ def fill_missing_product_images_batch(
 
     conn.commit()
 
-    remaining_after_row = conn.execute(
-        """
-        SELECT COUNT(*) AS c FROM products
-        WHERE image_url IS NULL OR image_url = ''
-        """
-    ).fetchone()
+    if overwrite:
+        remaining_after_row = conn.execute(
+            f"""
+            SELECT COUNT(*) AS c FROM products
+            WHERE image_url IS NULL
+               OR image_url = ''
+               OR image_url NOT LIKE ?
+            """,
+            (f"{UNAVAILABLE_PREFIX}%",),
+        ).fetchone()
+    else:
+        remaining_after_row = conn.execute(
+            """
+            SELECT COUNT(*) AS c FROM products
+            WHERE image_url IS NULL OR image_url = ''
+            """
+        ).fetchone()
     stats["remaining"] = remaining_after_row["c"]
     stats["done"] = stats["remaining"] == 0
     return stats
@@ -199,17 +289,31 @@ def fill_missing_product_images(
     conn,
     *,
     delay_sec: float = FETCH_DELAY_SEC,
+    overwrite: bool = False,
     on_progress: Callable[[dict], None] | None = None,
 ) -> dict:
-    """image_url が空の品目だけ公式HPから画像を取得して保存。"""
-    rows = conn.execute(
-        """
-        SELECT id, code, name
-        FROM products
-        WHERE image_url IS NULL OR image_url = ''
-        ORDER BY code
-        """
-    ).fetchall()
+    """image_url が空の品目（または overwrite 時は既存含む）を公式HPから取得。"""
+    if overwrite:
+        rows = conn.execute(
+            """
+            SELECT id, code, name
+            FROM products
+            WHERE image_url IS NULL
+               OR image_url = ''
+               OR image_url NOT LIKE ?
+            ORDER BY code
+            """,
+            (f"{UNAVAILABLE_PREFIX}%",),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            """
+            SELECT id, code, name
+            FROM products
+            WHERE image_url IS NULL OR image_url = ''
+            ORDER BY code
+            """
+        ).fetchall()
 
     from datetime import datetime
 

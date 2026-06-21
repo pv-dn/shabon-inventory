@@ -637,9 +637,10 @@ def api_fetch_official_images():
 
     data = request.get_json(silent=True) or {}
     limit = data.get("limit", 15)
+    overwrite = bool(data.get("overwrite", False))
     conn = get_connection()
     try:
-        stats = fill_missing_product_images_batch(conn, limit=limit)
+        stats = fill_missing_product_images_batch(conn, limit=limit, overwrite=overwrite)
     except Exception as e:
         conn.close()
         return jsonify({"error": str(e)}), 500
