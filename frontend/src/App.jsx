@@ -1041,6 +1041,7 @@ export default function App() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [cancellingId, setCancellingId] = useState(null);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [fetchingImages, setFetchingImages] = useState(false);
 
   const selectedProduct =
     compactCards && selectedProductId
@@ -1252,6 +1253,38 @@ export default function App() {
     }
   }
 
+  async function fetchOfficialImages() {
+    if (
+      !(await askConfirm({
+        message:
+          "公式通販（shabon.com）から、画像が未設定の品目だけ自動取得します。\nすでに登録済みの画像は変更しません。",
+        confirmLabel: "開始",
+      }))
+    ) {
+      return;
+    }
+    setFetchingImages(true);
+    let totalUpdated = 0;
+    let totalSkipped = 0;
+    try {
+      for (;;) {
+        const r = await api.fetchOfficialImages(12);
+        totalUpdated += r.updated;
+        totalSkipped += r.skipped;
+        if (r.done) {
+          showToast(`画像取得完了：${totalUpdated}件登録（${totalSkipped}件スキップ）`);
+          break;
+        }
+        showToast(`取得中… ${totalUpdated}件完了（残り ${r.remaining} 件）`);
+      }
+      await loadData();
+    } catch (err) {
+      showToast(err.message, true);
+    } finally {
+      setFetchingImages(false);
+    }
+  }
+
   async function logout() {
     await api.logout();
     setAuth(false);
@@ -1342,13 +1375,23 @@ export default function App() {
                 </>
               )}
               {tab === "products" && (
-                <button
-                  type="button"
-                  className="btn primary"
-                  onClick={() => setModal({ type: "edit", product: null })}
-                >
-                  新規品目
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="btn secondary"
+                    onClick={fetchOfficialImages}
+                    disabled={fetchingImages}
+                  >
+                    {fetchingImages ? "画像取得中…" : "公式HPから画像取得"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    onClick={() => setModal({ type: "edit", product: null })}
+                  >
+                    新規品目
+                  </button>
+                </>
               )}
               {tab === "active" && (
                 <span className="hint">入出庫の記録がある品目のみ</span>

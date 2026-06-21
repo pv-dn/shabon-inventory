@@ -80,12 +80,16 @@ def api_logout():
 
 
 MAX_IMAGE_URL_LEN = 300_000
+OFFICIAL_IMAGE_UNAVAILABLE_PREFIX = "unavailable:"
 
 
 def product_image_url(row):
     if "image_url" not in row.keys():
         return ""
-    return row["image_url"] or ""
+    raw = row["image_url"] or ""
+    if raw.startswith(OFFICIAL_IMAGE_UNAVAILABLE_PREFIX):
+        return ""
+    return raw
 
 
 def row_to_product(row, *, include_image=False):
@@ -625,6 +629,22 @@ def api_delete_product(product_id):
     conn.commit()
     conn.close()
     return jsonify({"ok": True, "deleted_movements": movement_count})
+
+
+@app.route("/api/products/fetch-official-images", methods=["POST"])
+def api_fetch_official_images():
+    from shabon_images import fill_missing_product_images_batch
+
+    data = request.get_json(silent=True) or {}
+    limit = data.get("limit", 15)
+    conn = get_connection()
+    try:
+        stats = fill_missing_product_images_batch(conn, limit=limit)
+    except Exception as e:
+        conn.close()
+        return jsonify({"error": str(e)}), 500
+    conn.close()
+    return jsonify({"ok": True, **stats})
 
 
 @app.route("/api/import", methods=["POST"])

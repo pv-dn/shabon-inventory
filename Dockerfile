@@ -5,7 +5,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py run.py config.py database.py db_compat.py import_excel.py ./
+COPY app.py run.py config.py database.py db_compat.py import_excel.py shabon_images.py ./
 COPY templates/ templates/
 COPY static/ static/
 COPY data/products.json data/products.json

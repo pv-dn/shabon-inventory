@@ -47,4 +47,9 @@ export const api = {
     request(`/api/products/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   deleteProduct: (id) => request(`/api/products/${id}`, { method: "DELETE" }),
   importExcel: () => request("/api/import", { method: "POST" }),
+  fetchOfficialImages: (limit = 15) =>
+    request("/api/products/fetch-official-images", {
+      method: "POST",
+      body: JSON.stringify({ limit }),
+    }),
 };
