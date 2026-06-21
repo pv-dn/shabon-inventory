@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import io
+import os
 import re
 import time
 import urllib.error
@@ -18,7 +19,7 @@ PRODUCT_IMAGE_URLS = (
 )
 USER_AGENT = "ShabonInventory/1.0 (+internal store tool)"
 MAX_IMAGE_URL_LEN = 300_000
-FETCH_DELAY_SEC = 0.6
+FETCH_DELAY_SEC = 0.6 if not os.environ.get("RENDER") else 0.25
 UNAVAILABLE_PREFIX = "unavailable:"
 OFFICIAL_PREFIX = "official:"
 MANUAL_PREFIX = "manual:"

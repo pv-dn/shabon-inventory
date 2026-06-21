@@ -8,12 +8,12 @@
  * 4. 関数を setupTrigger に変えて ▶ 実行 → 権限を承認
  * 5. 実行ログに「10分おきのトリガーを設定しました」と出れば完了
  *
- * 営業時間（7:00〜21:00）だけ 10 分おきにアクセスし、Render のスリープを防ぎます。
+ * 24時間 10 分おきにアクセスし、Render のスリープを防ぎます。
  * 1日あたり約 84 回（GAS 無料枠 2 万回/日 以内）なので完全無料で運用できます。
  */
 
 const HEALTH_URL = "https://shabon-inventory.onrender.com/api/health";
-const BUSINESS_HOURS_ONLY = true;
+const BUSINESS_HOURS_ONLY = false;
 const OPEN_HOUR = 7; // この時刻から（含む）
 const CLOSE_HOUR = 21; // この時刻まで（含まない）
 

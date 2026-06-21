@@ -1,26 +1,81 @@
+const DEFAULT_TIMEOUT_MS = 90_000;
+const RETRYABLE_STATUSES = new Set([502, 503, 504]);
+
+function isRetryableError(err) {
+  if (!err) return false;
+  if (err.name === "AbortError") return true;
+  if (err.name === "TypeError") return true;
+  return RETRYABLE_STATUSES.has(err.status);
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      credentials: "same-origin",
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function request(url, options = {}) {
-  const res = await fetch(url, {
-    credentials: "same-origin",
-    headers: { "Content-Type": "application/json", ...options.headers },
-    ...options,
-  });
-  const text = await res.text();
-  let data = {};
-  if (text) {
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const retries = options.retries ?? 1;
+  let lastError;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
-      data = JSON.parse(text);
-    } catch {
-      throw new Error("サーバーからの応答を読み取れません");
+      const res = await fetchWithTimeout(url, options, timeoutMs);
+      const text = await res.text();
+      let data = {};
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          const err = new Error(
+            res.ok
+              ? "サーバーからの応答を読み取れません"
+              : `サーバーエラー (${res.status})。しばらく待って再試行してください。`
+          );
+          err.status = res.status;
+          throw err;
+        }
+      }
+      if (!res.ok) {
+        const err = new Error(data.error || `エラー (${res.status})`);
+        err.status = res.status;
+        throw err;
+      }
+      return data;
+    } catch (err) {
+      lastError = err;
+      if (attempt < retries && isRetryableError(err)) {
+        await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+        continue;
+      }
+      break;
     }
   }
-  if (!res.ok) throw new Error(data.error || `エラー (${res.status})`);
-  return data;
+
+  if (lastError?.name === "AbortError") {
+    throw new Error("サーバー応答がタイムアウトしました。起動中の場合は少し待って再試行してください。");
+  }
+  throw lastError;
 }
 
 export const api = {
-  me: () => request("/api/me"),
+  me: () => request("/api/me", { timeoutMs: 120_000, retries: 2 }),
   login: (password) =>
-    request("/api/login", { method: "POST", body: JSON.stringify({ password }) }),
+    request("/api/login", {
+      method: "POST",
+      body: JSON.stringify({ password }),
+      timeoutMs: 120_000,
+      retries: 2,
+    }),
   logout: () => request("/api/logout", { method: "POST" }),
   summary: () => request("/api/summary"),
   categories: () => request("/api/categories"),
@@ -51,5 +106,7 @@ export const api = {
     request("/api/products/fetch-official-images", {
       method: "POST",
       body: JSON.stringify({ limit, overwrite }),
+      timeoutMs: 120_000,
+      retries: 1,
     }),
 };

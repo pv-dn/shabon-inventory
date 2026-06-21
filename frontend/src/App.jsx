@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api";
 import { compressImageFile } from "./imageUtils";
 
@@ -1042,6 +1042,8 @@ export default function App() {
   const [cancellingId, setCancellingId] = useState(null);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [fetchingImages, setFetchingImages] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const loadRequestIdRef = useRef(0);
 
   const selectedProduct =
     compactCards && selectedProductId
@@ -1100,47 +1102,50 @@ export default function App() {
   }, []);
 
   const checkAuth = useCallback(async () => {
-    const me = await api.me();
-    if (me.password_required && !me.authenticated) {
-      setAuth(false);
-    } else {
-      setAuth(true);
+    setAuthError("");
+    try {
+      const me = await api.me();
+      if (me.password_required && !me.authenticated) {
+        setAuth(false);
+      } else {
+        setAuth(true);
+      }
+    } catch (err) {
+      setAuthError(err.message || "サーバーに接続できません");
     }
-  }, []);
-
-  const loadSummary = useCallback(async () => {
-    setSummary(await api.summary());
   }, []);
 
   const loadData = useCallback(async () => {
+    const requestId = ++loadRequestIdRef.current;
     setLoading(true);
     try {
       if (tab === "history") {
-        setMovements(await api.movements(search));
+        const rows = await api.movements(search);
+        if (requestId !== loadRequestIdRef.current) return;
+        setMovements(rows);
       } else {
         const activeOnly = tab === "active" || tab === "ledger";
         const items = await api.products(search, activeOnly, categoryFilter);
+        if (requestId !== loadRequestIdRef.current) return;
         setProducts(items);
         if (tab === "ledger") {
-          const nextId =
-            ledgerProductId && items.some((p) => p.id === ledgerProductId)
-              ? ledgerProductId
-              : items[0]?.id ?? null;
-          setLedgerProductId(nextId);
-          if (nextId) {
-            setLedgerMovements(await api.productMovements(nextId));
-          } else {
-            setLedgerMovements([]);
-          }
+          setLedgerProductId((prev) =>
+            prev && items.some((p) => p.id === prev) ? prev : items[0]?.id ?? null
+          );
         }
       }
-      await loadSummary();
+      if (requestId !== loadRequestIdRef.current) return;
+      setSummary(await api.summary());
     } catch (err) {
-      showToast(err.message, true);
+      if (requestId === loadRequestIdRef.current) {
+        showToast(err.message, true);
+      }
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestIdRef.current) {
+        setLoading(false);
+      }
     }
-  }, [tab, search, categoryFilter, ledgerProductId, loadSummary, showToast]);
+  }, [tab, search, categoryFilter, showToast]);
 
   const handleCancelMovement = useCallback(
     async (m) => {
@@ -1202,15 +1207,13 @@ export default function App() {
   }, [auth]);
 
   useEffect(() => {
-    if (auth) loadData();
-  }, [auth, loadData]);
-
-  useEffect(() => {
+    if (!auth) return;
+    const delay = search ? 280 : 0;
     const t = setTimeout(() => {
-      if (auth) loadData();
-    }, 280);
+      loadData();
+    }, delay);
     return () => clearTimeout(t);
-  }, [search, auth, loadData]);
+  }, [auth, loadData, search]);
 
   useEffect(() => {
     if (!auth || tab !== "ledger" || !ledgerProductId) {
@@ -1269,7 +1272,7 @@ export default function App() {
     let prevRemaining = null;
     try {
       for (;;) {
-        const r = await api.fetchOfficialImages(12, true);
+        const r = await api.fetchOfficialImages(3, true);
         totalUpdated += r.updated;
         totalSkipped += r.skipped;
         if (r.done) {
@@ -1297,7 +1300,23 @@ export default function App() {
   }
 
   if (auth === null) {
-    return <div className="login-page" style={{ color: "#fff" }}>読み込み中…</div>;
+    return (
+      <div className="login-page" style={{ color: "#fff", textAlign: "center", padding: "2rem" }}>
+        {authError ? (
+          <>
+            <p style={{ marginBottom: "1rem" }}>{authError}</p>
+            <p style={{ marginBottom: "1rem", opacity: 0.85, fontSize: "0.95rem" }}>
+              クラウド版はしばらく使っていないと起動に30秒ほどかかることがあります。
+            </p>
+            <button type="button" className="btn btn-primary" onClick={checkAuth}>
+              再試行
+            </button>
+          </>
+        ) : (
+          "読み込み中…"
+        )}
+      </div>
+    );
   }
 
   if (auth === false) {

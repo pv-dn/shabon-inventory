@@ -1,3 +1,6 @@
+import json
+import os
+import threading
 from datetime import datetime
 from pathlib import Path
 
@@ -21,6 +24,14 @@ FRONTEND_DIST = APP_DIR / "frontend" / "dist"
 app = Flask(__name__)
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.secret_key = SECRET_KEY
+_db_init_lock = threading.Lock()
+
+if os.environ.get("RENDER") or os.environ.get("DATABASE_URL"):
+    app.config.update(
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_HTTPONLY=True,
+    )
 
 
 @app.after_request
@@ -33,7 +44,11 @@ def disable_static_cache(response):
 
 @app.before_request
 def ensure_db():
-    if not getattr(app, "_db_ready", False):
+    if getattr(app, "_db_ready", False):
+        return
+    with _db_init_lock:
+        if getattr(app, "_db_ready", False):
+            return
         init_db()
         seed_new_products_from_json()
         app._db_ready = True
@@ -640,6 +655,8 @@ def api_fetch_official_images():
     data = request.get_json(silent=True) or {}
     limit = data.get("limit", 15)
     overwrite = bool(data.get("overwrite", False))
+    if os.environ.get("RENDER"):
+        limit = min(int(limit or 15), 3)
     conn = get_connection()
     try:
         stats = fill_missing_product_images_batch(conn, limit=limit, overwrite=overwrite)
@@ -669,7 +686,17 @@ def api_import():
 
 @app.route("/api/health")
 def api_health():
-    return jsonify({"ok": True, "app": "shabon-inventory"})
+    payload = {"ok": True, "app": "shabon-inventory", "db": "ok"}
+    try:
+        conn = get_connection()
+        conn.execute("SELECT 1").fetchone()
+        conn.close()
+    except Exception as e:
+        payload["ok"] = False
+        payload["db"] = "error"
+        payload["error"] = str(e)
+        return jsonify(payload), 503
+    return jsonify(payload)
 
 
 @app.route("/api/summary")

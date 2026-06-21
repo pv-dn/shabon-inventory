@@ -4,7 +4,7 @@ name: Keep Render alive
 on:
   schedule:
     # 毎時 0,10,20,30,40,50 分（UTC）。営業時間は JST 7〜21 時付近をカバー
-    - cron: "*/10 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
