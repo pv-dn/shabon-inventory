@@ -84,12 +84,12 @@ OFFICIAL_IMAGE_UNAVAILABLE_PREFIX = "unavailable:"
 
 
 def product_image_url(row):
+    from shabon_images import normalize_image_for_display
+
     if "image_url" not in row.keys():
         return ""
     raw = row["image_url"] or ""
-    if raw.startswith(OFFICIAL_IMAGE_UNAVAILABLE_PREFIX):
-        return ""
-    return raw
+    return normalize_image_for_display(raw)
 
 
 def row_to_product(row, *, include_image=False):
@@ -200,7 +200,9 @@ def parse_product_payload(data, *, require_all=False):
         elif len(raw_image) > MAX_IMAGE_URL_LEN:
             errors.append("画像が大きすぎます（300KB以下にしてください）")
         else:
-            fields["image_url"] = raw_image
+            from shabon_images import mark_manual_image, normalize_image_for_display
+
+            fields["image_url"] = mark_manual_image(normalize_image_for_display(raw_image))
 
     if errors:
         raise ValueError(errors[0])

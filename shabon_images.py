@@ -20,6 +20,51 @@ USER_AGENT = "ShabonInventory/1.0 (+internal store tool)"
 MAX_IMAGE_URL_LEN = 300_000
 FETCH_DELAY_SEC = 0.6
 UNAVAILABLE_PREFIX = "unavailable:"
+OFFICIAL_PREFIX = "official:"
+MANUAL_PREFIX = "manual:"
+
+
+def normalize_image_for_display(raw: str) -> str:
+    if not raw:
+        return ""
+    if raw.startswith(UNAVAILABLE_PREFIX):
+        return ""
+    for prefix in (OFFICIAL_PREFIX, MANUAL_PREFIX):
+        if raw.startswith(prefix):
+            return raw[len(prefix) :]
+    return raw
+
+
+def mark_official_image(data_url: str) -> str:
+    if data_url.startswith(OFFICIAL_PREFIX):
+        return data_url
+    return f"{OFFICIAL_PREFIX}{data_url}"
+
+
+def mark_manual_image(data_url: str) -> str:
+    if data_url.startswith(MANUAL_PREFIX):
+        return data_url
+    return f"{MANUAL_PREFIX}{data_url}"
+
+
+def mark_unavailable(code: str) -> str:
+    return f"{UNAVAILABLE_PREFIX}{code}"
+
+
+def _needs_image_fetch_sql(overwrite: bool) -> str:
+    if overwrite:
+        return """
+        WHERE image_url IS NULL
+           OR image_url = ''
+           OR (
+             image_url NOT LIKE ?
+             AND image_url NOT LIKE ?
+             AND image_url NOT LIKE ?
+           )
+        """
+    return """
+        WHERE image_url IS NULL OR image_url = ''
+        """
 
 
 def _fetch_html(url: str) -> str | None:
@@ -169,20 +214,10 @@ def fetch_official_image_for_code(code: str) -> tuple[str | None, str | None]:
 
 
 def _products_needing_images_sql(overwrite: bool) -> str:
-    if overwrite:
-        return """
+    return f"""
         SELECT id, code, name
         FROM products
-        WHERE image_url IS NULL
-           OR image_url = ''
-           OR image_url NOT LIKE ?
-        ORDER BY code
-        LIMIT ?
-        """
-    return """
-        SELECT id, code, name
-        FROM products
-        WHERE image_url IS NULL OR image_url = ''
+        {_needs_image_fetch_sql(overwrite)}
         ORDER BY code
         LIMIT ?
         """
@@ -198,18 +233,21 @@ def fill_missing_product_images_batch(
     """公式HPから商品画像を取得。overwrite=True ならロゴ等の既存画像も差し替え。"""
     limit = max(1, min(int(limit), 30))
     if overwrite:
+        fetch_params = (
+            f"{UNAVAILABLE_PREFIX}%",
+            f"{OFFICIAL_PREFIX}%",
+            f"{MANUAL_PREFIX}%",
+        )
         rows = conn.execute(
             _products_needing_images_sql(True),
-            (f"{UNAVAILABLE_PREFIX}%", limit),
+            (*fetch_params, limit),
         ).fetchall()
         remaining_row = conn.execute(
             f"""
             SELECT COUNT(*) AS c FROM products
-            WHERE image_url IS NULL
-               OR image_url = ''
-               OR image_url NOT LIKE ?
+            {_needs_image_fetch_sql(True)}
             """,
-            (f"{UNAVAILABLE_PREFIX}%",),
+            fetch_params,
         ).fetchone()
     else:
         rows = conn.execute(
@@ -246,16 +284,16 @@ def fill_missing_product_images_batch(
         if data_url:
             conn.execute(
                 "UPDATE products SET image_url = ?, updated_at = ? WHERE id = ?",
-                (data_url, now, product_id),
+                (mark_official_image(data_url), now, product_id),
             )
             stats["updated"] += 1
         else:
             stats["skipped"] += 1
             stats["failed"].append({"code": code, "name": name, "reason": err or "不明"})
-            if err == "公式HPにページなし":
+            if err in ("公式HPにページなし", "商品画像が見つかりません", "商品コードなし"):
                 conn.execute(
                     "UPDATE products SET image_url = ?, updated_at = ? WHERE id = ?",
-                    (f"{UNAVAILABLE_PREFIX}{code}", now, product_id),
+                    (mark_unavailable(code), now, product_id),
                 )
 
         if delay_sec > 0:
@@ -267,11 +305,9 @@ def fill_missing_product_images_batch(
         remaining_after_row = conn.execute(
             f"""
             SELECT COUNT(*) AS c FROM products
-            WHERE image_url IS NULL
-               OR image_url = ''
-               OR image_url NOT LIKE ?
+            {_needs_image_fetch_sql(True)}
             """,
-            (f"{UNAVAILABLE_PREFIX}%",),
+            fetch_params,
         ).fetchone()
     else:
         remaining_after_row = conn.execute(
@@ -294,16 +330,19 @@ def fill_missing_product_images(
 ) -> dict:
     """image_url が空の品目（または overwrite 時は既存含む）を公式HPから取得。"""
     if overwrite:
+        fetch_params = (
+            f"{UNAVAILABLE_PREFIX}%",
+            f"{OFFICIAL_PREFIX}%",
+            f"{MANUAL_PREFIX}%",
+        )
         rows = conn.execute(
-            """
+            f"""
             SELECT id, code, name
             FROM products
-            WHERE image_url IS NULL
-               OR image_url = ''
-               OR image_url NOT LIKE ?
+            {_needs_image_fetch_sql(True)}
             ORDER BY code
             """,
-            (f"{UNAVAILABLE_PREFIX}%",),
+            fetch_params,
         ).fetchall()
     else:
         rows = conn.execute(
@@ -329,7 +368,7 @@ def fill_missing_product_images(
         if data_url:
             conn.execute(
                 "UPDATE products SET image_url = ?, updated_at = ? WHERE id = ?",
-                (data_url, now, product_id),
+                (mark_official_image(data_url), now, product_id),
             )
             stats["updated"] += 1
             item = {"code": code, "name": name, "status": "ok"}
@@ -337,6 +376,11 @@ def fill_missing_product_images(
             stats["skipped"] += 1
             stats["failed"].append({"code": code, "name": name, "reason": err or "不明"})
             item = {"code": code, "name": name, "status": "skip", "reason": err}
+            if err in ("公式HPにページなし", "商品画像が見つかりません", "商品コードなし"):
+                conn.execute(
+                    "UPDATE products SET image_url = ?, updated_at = ? WHERE id = ?",
+                    (mark_unavailable(code), now, product_id),
+                )
 
         if on_progress:
             on_progress(item)

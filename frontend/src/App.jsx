@@ -1266,6 +1266,7 @@ export default function App() {
     setFetchingImages(true);
     let totalUpdated = 0;
     let totalSkipped = 0;
+    let prevRemaining = null;
     try {
       for (;;) {
         const r = await api.fetchOfficialImages(12, true);
@@ -1275,6 +1276,11 @@ export default function App() {
           showToast(`画像取得完了：${totalUpdated}件登録（${totalSkipped}件スキップ）`);
           break;
         }
+        if (prevRemaining !== null && r.remaining === prevRemaining && r.updated === 0) {
+          showToast(`画像取得を終了：${totalUpdated}件登録（${totalSkipped}件スキップ）`, true);
+          break;
+        }
+        prevRemaining = r.remaining;
         showToast(`取得中… ${totalUpdated}件完了（残り ${r.remaining} 件）`);
       }
       await loadData();
