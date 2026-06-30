@@ -109,4 +109,10 @@ export const api = {
       timeoutMs: 120_000,
       retries: 1,
     }),
+  orderRequests: (q = "", status = "all") =>
+    request(`/api/order-requests?${new URLSearchParams({ status, ...(q ? { q } : {}) })}`),
+  createOrderRequest: (body) =>
+    request("/api/order-requests", { method: "POST", body: JSON.stringify(body) }),
+  completeOrderRequest: (id) =>
+    request(`/api/order-requests/${id}/complete`, { method: "POST" }),
 };

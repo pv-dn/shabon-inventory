@@ -642,6 +642,7 @@ def api_delete_product(product_id):
         "SELECT COUNT(*) AS c FROM movements WHERE product_id = ?", (product_id,)
     ).fetchone()["c"]
     conn.execute("DELETE FROM movements WHERE product_id = ?", (product_id,))
+    conn.execute("DELETE FROM order_requests WHERE product_id = ?", (product_id,))
     conn.execute("DELETE FROM products WHERE id = ?", (product_id,))
     conn.commit()
     conn.close()
@@ -665,6 +666,126 @@ def api_fetch_official_images():
         return jsonify({"error": str(e)}), 500
     conn.close()
     return jsonify({"ok": True, **stats})
+
+
+def row_to_order_request(row):
+    cats = parse_categories(row["category"] if "category" in row.keys() else "other")
+    return {
+        "id": row["id"],
+        "product_id": row["product_id"],
+        "quantity": row["quantity"],
+        "memo": row["memo"] or "",
+        "status": row["status"],
+        "created_at": row["created_at"],
+        "completed_at": row["completed_at"],
+        "code": row["code"],
+        "name": row["name"],
+        "spec": row["spec"] or "",
+        "stock_qty": row["stock_qty"],
+        "category_label": categories_label(cats),
+    }
+
+
+@app.route("/api/order-requests", methods=["GET"])
+def api_order_requests():
+    status = request.args.get("status", "pending")
+    q = request.args.get("q", "").strip()
+    conn = get_connection()
+    sql = """
+        SELECT r.*, p.code, p.name, p.spec, p.quantity AS stock_qty, p.category
+        FROM order_requests r
+        JOIN products p ON p.id = r.product_id
+        WHERE 1=1
+    """
+    params = []
+    if status != "all":
+        sql += " AND r.status = ?"
+        params.append(status)
+    if q:
+        like = f"%{q}%"
+        sql += " AND (p.code LIKE ? OR p.name LIKE ? OR p.spec LIKE ?)"
+        params.extend([like, like, like])
+    sql += " ORDER BY r.created_at DESC"
+    rows = conn.execute(sql, params).fetchall()
+    conn.close()
+    return jsonify([row_to_order_request(r) for r in rows])
+
+
+@app.route("/api/order-requests", methods=["POST"])
+def api_create_order_request():
+    data = request.get_json(force=True) or {}
+    product_id = data.get("product_id")
+    quantity = data.get("quantity", 1)
+    memo = (data.get("memo") or "").strip()
+
+    try:
+        product_id = int(product_id)
+        quantity = int(quantity)
+    except (TypeError, ValueError):
+        return jsonify({"error": "品目または数量が不正です"}), 400
+
+    if quantity < 1:
+        return jsonify({"error": "数量は1以上にしてください"}), 400
+    if quantity > 9999:
+        return jsonify({"error": "数量が大きすぎます"}), 400
+
+    conn = get_connection()
+    product = conn.execute("SELECT id FROM products WHERE id = ?", (product_id,)).fetchone()
+    if not product:
+        conn.close()
+        return jsonify({"error": "商品が見つかりません"}), 404
+
+    now = datetime.now().isoformat(timespec="seconds")
+    request_id = insert_returning_id(
+        conn,
+        """
+        INSERT INTO order_requests (product_id, quantity, memo, status, created_at)
+        VALUES (?, ?, ?, 'pending', ?)
+        """,
+        (product_id, quantity, memo, now),
+    )
+    conn.commit()
+    row = conn.execute(
+        """
+        SELECT r.*, p.code, p.name, p.spec, p.quantity AS stock_qty, p.category
+        FROM order_requests r
+        JOIN products p ON p.id = r.product_id
+        WHERE r.id = ?
+        """,
+        (request_id,),
+    ).fetchone()
+    conn.close()
+    return jsonify(row_to_order_request(row)), 201
+
+
+@app.route("/api/order-requests/<int:request_id>/complete", methods=["POST"])
+def api_complete_order_request(request_id):
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM order_requests WHERE id = ?", (request_id,)).fetchone()
+    if not row:
+        conn.close()
+        return jsonify({"error": "依頼が見つかりません"}), 404
+    if row["status"] == "completed":
+        conn.close()
+        return jsonify({"error": "すでに処理済みです"}), 400
+
+    now = datetime.now().isoformat(timespec="seconds")
+    conn.execute(
+        "UPDATE order_requests SET status = 'completed', completed_at = ? WHERE id = ?",
+        (now, request_id),
+    )
+    conn.commit()
+    updated = conn.execute(
+        """
+        SELECT r.*, p.code, p.name, p.spec, p.quantity AS stock_qty, p.category
+        FROM order_requests r
+        JOIN products p ON p.id = r.product_id
+        WHERE r.id = ?
+        """,
+        (request_id,),
+    ).fetchone()
+    conn.close()
+    return jsonify(row_to_order_request(updated))
 
 
 @app.route("/api/import", methods=["POST"])
@@ -710,8 +831,17 @@ def api_summary():
     active = conn.execute(
         "SELECT COUNT(DISTINCT product_id) AS c FROM movements WHERE cancelled_at IS NULL"
     ).fetchone()["c"]
+    pending_orders = conn.execute(
+        "SELECT COUNT(*) AS c FROM order_requests WHERE status = 'pending'"
+    ).fetchone()["c"]
     conn.close()
-    return jsonify({"total": total, "low_stock": low, "zero_stock": zero, "with_movements": active})
+    return jsonify({
+        "total": total,
+        "low_stock": low,
+        "zero_stock": zero,
+        "with_movements": active,
+        "pending_order_requests": pending_orders,
+    })
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ const TYPE_LABELS = { in: "入庫", out: "出庫", adjust: "棚卸" };
 const TABS = [
   { id: "stock", label: "在庫一覧" },
   { id: "active", label: "動きのある品目" },
+  { id: "orders", label: "注文依頼" },
   { id: "ledger", label: "増減履歴" },
   { id: "products", label: "品目編集" },
   { id: "history", label: "入出庫履歴" },
@@ -199,7 +200,7 @@ function LoginScreen({ onLogin }) {
   );
 }
 
-function CompactDetailPanel({ product, imageUrl, categories, onClose, onMove, onEdit, onDetail, toast, onSaved }) {
+function CompactDetailPanel({ product, imageUrl, categories, onClose, onMove, onEdit, onDetail, onOrderRequest, toast, onSaved }) {
   const [busy, setBusy] = useState(false);
 
   async function adjust(delta) {
@@ -269,6 +270,9 @@ function CompactDetailPanel({ product, imageUrl, categories, onClose, onMove, on
           </button>
         </div>
         <div className="toolbar-detail-actions">
+          <button type="button" className="btn small accent" onClick={() => onOrderRequest(product)}>
+            注文依頼
+          </button>
           <button type="button" className="btn small primary" onClick={() => onMove(product)}>
             入出庫
           </button>
@@ -284,7 +288,7 @@ function CompactDetailPanel({ product, imageUrl, categories, onClose, onMove, on
   );
 }
 
-function ProductCard({ product, compact, selected, categories, onSelect, onMove, onEdit, onDetail }) {
+function ProductCard({ product, compact, selected, categories, onSelect, onMove, onEdit, onDetail, onOrderRequest }) {
   const primaryCategory = productCategories(product)[0];
   if (compact) {
     return (
@@ -323,6 +327,9 @@ function ProductCard({ product, compact, selected, categories, onSelect, onMove,
         <small>個</small>
       </div>
       <div className="card-actions">
+        <button type="button" className="btn small accent" onClick={() => onOrderRequest(product)}>
+          注文依頼
+        </button>
         <button type="button" className="btn small primary" onClick={() => onMove(product)}>
           入出庫
         </button>
@@ -334,6 +341,181 @@ function ProductCard({ product, compact, selected, categories, onSelect, onMove,
         </button>
       </div>
     </article>
+  );
+}
+
+function OrderRequestModal({ product, onClose, onSaved, toast }) {
+  const [quantity, setQuantity] = useState(1);
+  const [memo, setMemo] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e) {
+    e.preventDefault();
+    const qty = parseInt(quantity, 10);
+    if (!qty || qty < 1) {
+      toast("数量は1以上にしてください", true);
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.createOrderRequest({
+        product_id: product.id,
+        quantity: qty,
+        memo: memo.trim(),
+      });
+      toast("注文依頼を登録しました");
+      onSaved();
+      onClose();
+    } catch (err) {
+      toast(err.message, true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h2>注文依頼</h2>
+        <p>
+          <strong>{product.code}</strong> {product.name}
+        </p>
+        <p style={{ color: "var(--muted)" }}>
+          現在庫: {product.quantity}個
+          {product.spec ? ` ／ ${product.spec}` : ""}
+        </p>
+        <form onSubmit={submit}>
+          <label>
+            依頼数量（個）
+            <input
+              type="number"
+              min={1}
+              max={9999}
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              required
+            />
+          </label>
+          <label>
+            メモ（任意）
+            <input
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              placeholder="例: よく聞かれるので"
+            />
+          </label>
+          <div className="modal-actions">
+            <button type="button" className="btn secondary" onClick={onClose} disabled={busy}>
+              キャンセル
+            </button>
+            <button type="submit" className="btn accent" disabled={busy}>
+              依頼する
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function OrderRequestsPanel({ requests, showCompleted, onToggleCompleted, onComplete, completingId }) {
+  const pending = requests.filter((r) => r.status === "pending");
+  const completed = requests.filter((r) => r.status === "completed");
+
+  return (
+    <div className="order-requests-panel">
+      <section className="order-requests-section">
+        <h2 className="order-requests-heading">
+          未処理
+          <span className="order-requests-count">{pending.length}件</span>
+        </h2>
+        {pending.length === 0 ? (
+          <p className="empty">未処理の注文依頼はありません</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table order-requests-table">
+              <thead>
+                <tr>
+                  <th>依頼日時</th>
+                  <th>コード</th>
+                  <th>商品名</th>
+                  <th>規格</th>
+                  <th className="num">在庫</th>
+                  <th className="num">依頼数</th>
+                  <th>メモ</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pending.map((r) => (
+                  <tr key={r.id}>
+                    <td>{formatDate(r.created_at)}</td>
+                    <td>{r.code}</td>
+                    <td>{r.name}</td>
+                    <td>{r.spec || "—"}</td>
+                    <td className="num">{r.stock_qty}</td>
+                    <td className="num order-qty">{r.quantity}</td>
+                    <td>{r.memo || "—"}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn small secondary"
+                        onClick={() => onComplete(r)}
+                        disabled={completingId === r.id}
+                      >
+                        {completingId === r.id ? "処理中…" : "済にする"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="order-requests-section order-requests-completed">
+        <button
+          type="button"
+          className="order-completed-toggle"
+          onClick={onToggleCompleted}
+        >
+          {showCompleted ? "▲ 処理済みを隠す" : `▼ 処理済み（${completed.length}件）`}
+        </button>
+        {showCompleted && (
+          completed.length === 0 ? (
+            <p className="empty">処理済みの依頼はありません</p>
+          ) : (
+            <div className="table-wrap">
+              <table className="data-table order-requests-table muted-table">
+                <thead>
+                  <tr>
+                    <th>依頼日時</th>
+                    <th>コード</th>
+                    <th>商品名</th>
+                    <th className="num">依頼数</th>
+                    <th>メモ</th>
+                    <th>処理日時</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {completed.map((r) => (
+                    <tr key={r.id}>
+                      <td>{formatDate(r.created_at)}</td>
+                      <td>{r.code}</td>
+                      <td>{r.name}</td>
+                      <td className="num">{r.quantity}</td>
+                      <td>{r.memo || "—"}</td>
+                      <td>{formatDate(r.completed_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        )}
+      </section>
+    </div>
   );
 }
 
@@ -943,7 +1125,7 @@ function ProductHistoryCorner({
   );
 }
 
-function DetailModal({ product, categories, onClose, onEdit, onCancel, cancellingId }) {
+function DetailModal({ product, categories, onClose, onEdit, onOrderRequest, onCancel, cancellingId }) {
   const [movements, setMovements] = useState([]);
   const [imageUrl, setImageUrl] = useState(product.image_url || "");
 
@@ -996,9 +1178,14 @@ function DetailModal({ product, categories, onClose, onEdit, onCancel, cancellin
           <dt>メモ</dt>
           <dd>{product.note || "—"}</dd>
         </dl>
-        <button type="button" className="btn secondary" onClick={() => onEdit(product)}>
-          品目を編集
-        </button>
+        <div className="detail-actions-row">
+          <button type="button" className="btn accent" onClick={() => onOrderRequest(product)}>
+            注文依頼
+          </button>
+          <button type="button" className="btn secondary" onClick={() => onEdit(product)}>
+            品目を編集
+          </button>
+        </div>
         <h3 style={{ marginTop: "1.25rem" }}>増減履歴</h3>
         <div style={{ maxHeight: "280px" }}>
           <MovementHistoryTable
@@ -1043,6 +1230,9 @@ export default function App() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [fetchingImages, setFetchingImages] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [orderRequests, setOrderRequests] = useState([]);
+  const [showCompletedOrders, setShowCompletedOrders] = useState(false);
+  const [completingOrderId, setCompletingOrderId] = useState(null);
   const loadRequestIdRef = useRef(0);
 
   const selectedProduct =
@@ -1123,6 +1313,10 @@ export default function App() {
         const rows = await api.movements(search);
         if (requestId !== loadRequestIdRef.current) return;
         setMovements(rows);
+      } else if (tab === "orders") {
+        const rows = await api.orderRequests(search, "all");
+        if (requestId !== loadRequestIdRef.current) return;
+        setOrderRequests(rows);
       } else {
         const activeOnly = tab === "active" || tab === "ledger";
         const items = await api.products(search, activeOnly, categoryFilter);
@@ -1191,6 +1385,26 @@ export default function App() {
     },
     [askConfirm, loadData, showToast]
   );
+
+  const handleCompleteOrderRequest = useCallback(
+    async (requestRow) => {
+      setCompletingOrderId(requestRow.id);
+      try {
+        await api.completeOrderRequest(requestRow.id);
+        showToast("処理済みにしました");
+        await loadData();
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        setCompletingOrderId(null);
+      }
+    },
+    [loadData, showToast]
+  );
+
+  const openOrderRequest = useCallback((product) => {
+    setModal({ type: "order-request", product });
+  }, []);
 
   useEffect(() => {
     checkAuth();
@@ -1335,6 +1549,9 @@ export default function App() {
               <span className="chip">動きあり {summary.with_movements}</span>
               <span className="chip">在庫ゼロ {summary.zero_stock}</span>
               <span className="chip">要補充 {summary.low_stock}</span>
+              {(summary.pending_order_requests ?? 0) > 0 && (
+                <span className="chip chip-alert">注文依頼 {summary.pending_order_requests}</span>
+              )}
             </div>
           )}
           <button type="button" className="btn ghost small" onClick={logout}>
@@ -1359,6 +1576,9 @@ export default function App() {
               }}
             >
               {t.label}
+              {t.id === "orders" && (summary?.pending_order_requests ?? 0) > 0 && (
+                <span className="tab-badge">{summary.pending_order_requests}</span>
+              )}
             </button>
           ))}
         </div>
@@ -1373,6 +1593,8 @@ export default function App() {
                 placeholder={
                   tab === "history"
                     ? "履歴を検索"
+                    : tab === "orders"
+                      ? "コード・商品名・規格で依頼を検索"
                     : tab === "ledger"
                       ? "増減履歴のある品目を検索"
                       : "コード・商品名・規格で検索"
@@ -1418,6 +1640,9 @@ export default function App() {
                   </button>
                 </>
               )}
+              {tab === "orders" && (
+                <span className="hint">店舗からの依頼一覧。発注後に「済にする」で片付けます</span>
+              )}
               {tab === "active" && (
                 <span className="hint">入出庫の記録がある品目のみ</span>
               )}
@@ -1434,6 +1659,7 @@ export default function App() {
                 onMove={(pr) => setModal({ type: "move", product: pr })}
                 onEdit={(pr) => setModal({ type: "edit", product: pr })}
                 onDetail={(pr) => setModal({ type: "detail", product: pr })}
+                onOrderRequest={openOrderRequest}
                 toast={showToast}
                 onSaved={loadData}
               />
@@ -1518,6 +1744,9 @@ export default function App() {
                         <td>{p.case_qty}</td>
                         <td className="num">{p.quantity}</td>
                         <td>
+                          <button type="button" className="btn small accent" onClick={() => openOrderRequest(p)}>
+                            注文依頼
+                          </button>
                           <button type="button" className="btn small secondary" onClick={() => setModal({ type: "edit", product: p })}>
                             編集
                           </button>
@@ -1528,6 +1757,16 @@ export default function App() {
                 </table>
               )}
             </div>
+          )}
+
+          {!loading && tab === "orders" && (
+            <OrderRequestsPanel
+              requests={orderRequests}
+              showCompleted={showCompletedOrders}
+              onToggleCompleted={() => setShowCompletedOrders((v) => !v)}
+              onComplete={handleCompleteOrderRequest}
+              completingId={completingOrderId}
+            />
           )}
 
           {!loading && (tab === "stock" || tab === "active") && (
@@ -1547,6 +1786,7 @@ export default function App() {
                       onMove={(pr) => setModal({ type: "move", product: pr })}
                       onEdit={(pr) => setModal({ type: "edit", product: pr })}
                       onDetail={(pr) => setModal({ type: "detail", product: pr })}
+                      onOrderRequest={openOrderRequest}
                     />
                   ))}
                 </div>
@@ -1577,12 +1817,21 @@ export default function App() {
           toast={showToast}
         />
       )}
+      {modal?.type === "order-request" && (
+        <OrderRequestModal
+          product={modal.product}
+          onClose={() => setModal(null)}
+          onSaved={loadData}
+          toast={showToast}
+        />
+      )}
       {modal?.type === "detail" && (
         <DetailModal
           product={modal.product}
           categories={categories}
           onClose={() => setModal(null)}
           onEdit={(p) => setModal({ type: "edit", product: p })}
+          onOrderRequest={openOrderRequest}
           onCancel={handleCancelMovement}
           cancellingId={cancellingId}
         />

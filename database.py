@@ -183,8 +183,54 @@ def init_db():
     migrate_add_cancelled_at(conn)
     migrate_add_image_url(conn)
     migrate_categories_to_json(conn)
+    migrate_order_requests(conn)
     purge_cancelled_movements(conn)
     conn.close()
+
+
+def migrate_order_requests(conn):
+    if USE_POSTGRES:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS order_requests (
+                id SERIAL PRIMARY KEY,
+                product_id INTEGER NOT NULL REFERENCES products(id),
+                quantity INTEGER NOT NULL DEFAULT 1,
+                memo TEXT,
+                status TEXT NOT NULL DEFAULT 'pending',
+                created_at TEXT NOT NULL,
+                completed_at TEXT
+            )
+            """
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_order_requests_status ON order_requests(status)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_order_requests_created ON order_requests(created_at)"
+        )
+    else:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS order_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                product_id INTEGER NOT NULL,
+                quantity INTEGER NOT NULL DEFAULT 1,
+                memo TEXT,
+                status TEXT NOT NULL DEFAULT 'pending',
+                created_at TEXT NOT NULL,
+                completed_at TEXT,
+                FOREIGN KEY (product_id) REFERENCES products(id)
+            )
+            """
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_order_requests_status ON order_requests(status)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_order_requests_created ON order_requests(created_at)"
+        )
+    conn.commit()
 
 
 def purge_cancelled_movements(conn):
