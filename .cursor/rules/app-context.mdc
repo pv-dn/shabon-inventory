@@ -1,0 +1,27 @@
+---
+description: しゃぼん玉在庫管理単体プロジェクトのコンテキスト（他アプリと混ぜない）
+alwaysApply: true
+---
+
+# shabon-inventory — 独立プロジェクト
+
+このフォルダ（`c:\dev\shabon-inventory-app`）は **しゃぼん玉せっけん 在庫管理** のみ。
+
+## 作業前に確認
+
+- 詳細は `PROJECT.md` を読む
+- 他アプリ（dream-weaver, pourvous-inventory）のコードを import・参照・変更しない
+
+## スタック
+
+Flask (Python) + SQLite + React (Vite)。`app.py` が API、`frontend/src/App.jsx` が UI。
+
+## 主要パス
+
+- API: `app.py`, `database.py`, `categories.py`
+- UI: `frontend/src/App.jsx`, `frontend/src/api.js`
+- データ: `data/products.json`
+
+## ポート
+
+ローカル: http://127.0.0.1:5050（`config.json`）

@@ -1,0 +1,18 @@
+シャボン玉石けん在庫管理 — アプリのURL
+================================
+
+■ 店舗共有用（クラウド・固定URL）★本番
+  https://shabon-inventory.onrender.com
+
+■ ログインパスワード
+  haizi814
+  （変更時は deploy-password.txt も確認）
+
+■ このPCで使う（起動.bat 実行中のみ）
+  http://127.0.0.1:5050
+
+■ GitHub（ソース）
+  https://github.com/pv-dn/shabon-inventory
+
+■ Render 管理画面
+  https://dashboard.render.com
