@@ -23,6 +23,57 @@ function hasImage(url) {
   return true;
 }
 
+function nowIso() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+function productImageCandidates(code) {
+  const c = String(code || "").trim();
+  if (!c) return [];
+  return [
+    `https://www.shabon.com/shop/f/resources/images/Product/${c}/main.jpg`,
+    `https://www.shabon.com/shop/resources/images/Product/${c}/main.jpg`,
+  ];
+}
+
+function probeImageUrl(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const timer = setTimeout(() => {
+      img.onload = null;
+      img.onerror = null;
+      resolve(false);
+    }, 8000);
+    img.onload = () => {
+      clearTimeout(timer);
+      resolve(img.naturalWidth > 8 && img.naturalHeight > 8);
+    };
+    img.onerror = () => {
+      clearTimeout(timer);
+      resolve(false);
+    };
+    img.referrerPolicy = "no-referrer";
+    img.src = url;
+  });
+}
+
+async function findOfficialImageUrl(code) {
+  for (const url of productImageCandidates(code)) {
+    if (await probeImageUrl(url)) return url;
+  }
+  return null;
+}
+
+function needsOfficialFetch(imageUrl, overwrite) {
+  const u = String(imageUrl || "");
+  if (!u) return true;
+  if (u.startsWith("unavailable:")) return false;
+  if (u.startsWith("official:")) return false;
+  return Boolean(overwrite);
+}
+
 function mapProduct(row, { includeImage = false } = {}) {
   if (!row) return null;
   const cats = parseCategories(row.category);
@@ -84,12 +135,6 @@ function mapOrder(row) {
     categories: cats,
     category_label: categoriesLabel(cats),
   };
-}
-
-function nowIso() {
-  const d = new Date();
-  const p = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
 async function attachMovementMeta(products) {
@@ -332,12 +377,49 @@ export const supabaseApi = {
     throw err;
   },
 
-  async fetchOfficialImages() {
-    const err = new Error(
-      "クラウド版では公式画像の一括取得はできません。品目編集から画像を登録してください。"
+  async fetchOfficialImages(limit = 15, overwrite = false) {
+    const rows = await sb.rest(
+      "products?select=id,code,image_url&order=code.asc"
     );
-    err.status = 400;
-    throw err;
+    const targets = (rows || []).filter((r) =>
+      needsOfficialFetch(r.image_url, Boolean(overwrite))
+    );
+    const batch = targets.slice(0, Math.max(1, Math.min(Number(limit) || 15, 10)));
+    let updated = 0;
+    let skipped = 0;
+
+    for (const p of batch) {
+      const found = await findOfficialImageUrl(p.code);
+      if (found) {
+        await sb.rest(`products?id=eq.${p.id}`, {
+          method: "PATCH",
+          body: {
+            image_url: `official:${found}`,
+            updated_at: nowIso(),
+          },
+        });
+        updated += 1;
+      } else {
+        await sb.rest(`products?id=eq.${p.id}`, {
+          method: "PATCH",
+          body: {
+            image_url: `unavailable:${p.code}`,
+            updated_at: nowIso(),
+          },
+        });
+        skipped += 1;
+      }
+      await new Promise((r) => setTimeout(r, 180));
+    }
+
+    const remaining = Math.max(0, targets.length - batch.length);
+    return {
+      ok: true,
+      updated,
+      skipped,
+      remaining,
+      done: remaining === 0,
+    };
   },
 
   async orderRequests(q = "", status = "all") {
