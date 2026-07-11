@@ -15,7 +15,7 @@
 - バックエンド: Python 3.10+, Flask
 - DB: SQLite（`database.py`）
 - フロント: React (Vite), `frontend/src/App.jsx`
-- デプロイ: Docker / Render（任意）
+- デプロイ: Docker / Fly.io（任意・Neon DB）
 
 ## 主要ファイル
 

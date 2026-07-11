@@ -1,3 +1,6 @@
+import { isSupabaseMode } from "./supabaseClient.js";
+import { supabaseApi } from "./apiSupabase.js";
+
 const DEFAULT_TIMEOUT_MS = 90_000;
 const RETRYABLE_STATUSES = new Set([502, 503, 504]);
 
@@ -62,12 +65,14 @@ export async function request(url, options = {}) {
   }
 
   if (lastError?.name === "AbortError") {
-    throw new Error("サーバー応答がタイムアウトしました。起動中の場合は少し待って再試行してください。");
+    throw new Error(
+      "サーバー応答がタイムアウトしました。起動中の場合は少し待って再試行してください。"
+    );
   }
   throw lastError;
 }
 
-export const api = {
+const flaskApi = {
   me: () => request("/api/me", { timeoutMs: 120_000, retries: 2 }),
   login: (password) =>
     request("/api/login", {
@@ -95,7 +100,10 @@ export const api = {
   cancelMovement: (id) =>
     request(`/api/movements/${id}/cancel`, { method: "POST" }),
   bulkCancelMovements: (ids) =>
-    request("/api/movements/bulk-cancel", { method: "POST", body: JSON.stringify({ ids }) }),
+    request("/api/movements/bulk-cancel", {
+      method: "POST",
+      body: JSON.stringify({ ids }),
+    }),
   createProduct: (body) =>
     request("/api/products", { method: "POST", body: JSON.stringify(body) }),
   updateProduct: (id, body) =>
@@ -110,9 +118,20 @@ export const api = {
       retries: 1,
     }),
   orderRequests: (q = "", status = "all") =>
-    request(`/api/order-requests?${new URLSearchParams({ status, ...(q ? { q } : {}) })}`),
+    request(
+      `/api/order-requests?${new URLSearchParams({
+        status,
+        ...(q ? { q } : {}),
+      })}`
+    ),
   createOrderRequest: (body) =>
-    request("/api/order-requests", { method: "POST", body: JSON.stringify(body) }),
+    request("/api/order-requests", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   completeOrderRequest: (id) =>
     request(`/api/order-requests/${id}/complete`, { method: "POST" }),
 };
+
+/** Supabase設定があればクラウド、なければ従来のFlaskローカル */
+export const api = isSupabaseMode ? supabaseApi : flaskApi;

@@ -14,14 +14,20 @@ alwaysApply: true
 
 ## スタック
 
-Flask (Python) + SQLite + React (Vite)。`app.py` が API、`frontend/src/App.jsx` が UI。
+Flask (Python) + SQLite（ローカル任意）／ **Supabase（本番データ・専用プロジェクト）** + React (Vite)。
+本番公開は GitHub Pages。Render / Fly は使わない。
+
+他アプリ（プゥルヴー在庫・価格参照など）の Supabase / Firebase とは **絶対に混在させない**。
 
 ## 主要パス
 
-- API: `app.py`, `database.py`, `categories.py`
-- UI: `frontend/src/App.jsx`, `frontend/src/api.js`
-- データ: `data/products.json`
+- API互換クライアント: `frontend/src/api.js`（Supabase or Flask）
+- Supabase実装: `frontend/src/apiSupabase.js`, `supabase/schema.sql`
+- UI: `frontend/src/App.jsx`
+- データ種: `data/products.json`
+- 公開手順: `Supabase公開の手順.md`
 
-## ポート
+## ポート / URL
 
-ローカル: http://127.0.0.1:5050（`config.json`）
+- ローカル Flask: http://127.0.0.1:5050
+- 本番: https://pv-dn.github.io/shabon-inventory/

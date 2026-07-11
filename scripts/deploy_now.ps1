@@ -1,9 +1,11 @@
-# One-shot: GitHub push + open Neon/Render (run after gh auth login)
+# One-shot: GitHub push + Fly.io deploy (run after gh / flyctl auth login)
 $ErrorActionPreference = "Stop"
 $AppDir = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $AppDir
 
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
+    [System.Environment]::GetEnvironmentVariable("Path", "User") + ";" +
+    "$env:USERPROFILE\.fly\bin"
 
 gh auth status 2>$null
 if ($LASTEXITCODE -ne 0) {
@@ -14,4 +16,4 @@ if ($LASTEXITCODE -ne 0) {
     gh auth login -h github.com -p https -w
 }
 
-& (Join-Path $AppDir "scripts\deploy_render.ps1")
+& (Join-Path $AppDir "scripts\deploy_fly.ps1")

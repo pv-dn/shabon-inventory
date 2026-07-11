@@ -22,7 +22,7 @@ def load_config() -> dict:
 
 CONFIG = load_config()
 
-# クラウド（Render 等）では環境変数が優先
+# クラウド（Fly.io / Render 等）では環境変数が優先
 HOST = os.environ.get("HOST", CONFIG["host"])
 PORT = int(os.environ.get("PORT", CONFIG["port"]))
 OPEN_BROWSER = os.environ.get("OPEN_BROWSER", str(CONFIG.get("open_browser", True))).lower() in (
@@ -31,8 +31,20 @@ OPEN_BROWSER = os.environ.get("OPEN_BROWSER", str(CONFIG.get("open_browser", Tru
     "yes",
 )
 
+
+def is_cloud() -> bool:
+    """Render / Fly.io / DATABASE_URL がある環境をクラウド扱いにする。"""
+    return bool(
+        os.environ.get("FLY_APP_NAME")
+        or os.environ.get("RENDER")
+        or os.environ.get("DATABASE_URL")
+    )
+
+
+IS_CLOUD = is_cloud()
+
 # クラウド公開時は自動設定
-if os.environ.get("RENDER") or os.environ.get("DATABASE_URL"):
+if IS_CLOUD:
     HOST = os.environ.get("HOST", "0.0.0.0")
     OPEN_BROWSER = False
 

@@ -1,5 +1,5 @@
-# Render.com - PC不要・固定URL（無料枠）
-# Blueprint Apply 時は APP_PASSWORD のみ入力（DBは自動接続）
+# Render.com - 旧デプロイ用（新規は Fly.io を使う）
+# 参照のみ。本番は fly.toml + Neon。
 
 services:
   - type: web
@@ -15,7 +15,7 @@ services:
       - key: RENDER
         value: "true"
       - key: APP_PASSWORD
-        value: "haizi812"
+        value: "haizi814"
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL

@@ -43,14 +43,17 @@
 
 ## 別店舗へ URL で共有する（固定URL・PC不要）
 
-**あなたのPCをサーバーにする必要はありません。**  
-Render（クラウド）に置けば、固定URLで全店舗が使えます。
+**Render は使いません。**  
+Supabase（データ）+ GitHub Pages（画面）で固定URLにします。見た目・操作はそのままです。
 
-→ **`固定URLで公開する手順.md`** を開いてください（約30分・初回のみ）
+→ **`Supabase公開の手順.md`** を開いてください
 
-- 例: `https://shabon-inventory.onrender.com`
+- 例: `https://pv-dn.github.io/shabon-inventory/`
 - PCの電源は切ってOK
-- データはクラウド（Neon）に保存
+- データはしゃぼん玉専用の Supabase に保存（他アプリと混在させない）
+
+ローカルのみ: これまでどおり `起動.bat` → http://127.0.0.1:5050
+
 
 ---
 

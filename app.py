@@ -15,7 +15,7 @@ from categories import (
     serialize_categories,
 )
 from database import get_connection, init_db, merge_products_from_json, resolve_category, seed_new_products_from_json
-from config import APP_PASSWORD, SECRET_KEY
+from config import APP_PASSWORD, IS_CLOUD, SECRET_KEY
 from db_compat import insert_returning_id
 
 APP_DIR = Path(__file__).parent
@@ -26,7 +26,7 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.secret_key = SECRET_KEY
 _db_init_lock = threading.Lock()
 
-if os.environ.get("RENDER") or os.environ.get("DATABASE_URL"):
+if IS_CLOUD:
     app.config.update(
         SESSION_COOKIE_SECURE=True,
         SESSION_COOKIE_SAMESITE="Lax",
@@ -656,7 +656,7 @@ def api_fetch_official_images():
     data = request.get_json(silent=True) or {}
     limit = data.get("limit", 15)
     overwrite = bool(data.get("overwrite", False))
-    if os.environ.get("RENDER"):
+    if IS_CLOUD:
         limit = min(int(limit or 15), 3)
     conn = get_connection()
     try:

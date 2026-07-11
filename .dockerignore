@@ -1,0 +1,14 @@
+.venv
+__pycache__
+*.pyc
+.git
+.github
+frontend/node_modules
+frontend/dist
+backups
+*.db
+tunnel.log
+tunnel-err.log
+gh-auth-err.txt
+gh-auth-out.txt
+.cursor

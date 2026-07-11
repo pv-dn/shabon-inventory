@@ -1,0 +1,48 @@
+name: Deploy GitHub Pages (shabon-inventory only)
+
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build for GitHub Pages
+        env:
+          GITHUB_PAGES: "1"
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_APP_PASSWORD: ${{ secrets.VITE_APP_PASSWORD }}
+        run: npm run build
+
+      - name: Publish docs/
+        working-directory: .
+        run: |
+          rm -rf docs
+          mkdir -p docs
+          cp -r frontend/dist/. docs/
+          touch docs/.nojekyll
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs
+          git diff --staged --quiet || git commit -m "deploy: shabon-inventory pages [skip ci]"
+          git push

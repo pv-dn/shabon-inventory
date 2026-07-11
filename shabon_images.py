@@ -19,7 +19,15 @@ PRODUCT_IMAGE_URLS = (
 )
 USER_AGENT = "ShabonInventory/1.0 (+internal store tool)"
 MAX_IMAGE_URL_LEN = 300_000
-FETCH_DELAY_SEC = 0.6 if not os.environ.get("RENDER") else 0.25
+FETCH_DELAY_SEC = (
+    0.25
+    if (
+        os.environ.get("FLY_APP_NAME")
+        or os.environ.get("RENDER")
+        or os.environ.get("DATABASE_URL")
+    )
+    else 0.6
+)
 UNAVAILABLE_PREFIX = "unavailable:"
 OFFICIAL_PREFIX = "official:"
 MANUAL_PREFIX = "manual:"
