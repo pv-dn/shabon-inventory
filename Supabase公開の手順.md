@@ -1,4 +1,4 @@
-# しゃぼん玉せっけん在庫 — Supabase + GitHub Pages（Render不要）
+﻿# しゃぼん玉せっけん在庫 — Supabase + GitHub Pages（Render不要）
 
 他アプリ（プゥルヴー在庫・価格参照など）とは **別の Supabase プロジェクト** を作ります。  
 キーやテーブルを共有しないでください。
@@ -10,7 +10,7 @@
 ## 完成イメージ
 
 - URL例: `https://pv-dn.github.io/shabon-inventory/`
-- ログインパスワード: `haizi814`（変更可）
+- ログインパスワード: `haizi812`（変更可）
 - PCの電源不要・Renderの起動待ちなし
 
 ---
@@ -46,7 +46,7 @@ powershell -File scripts\seed_supabase.ps1
 ```
 VITE_SUPABASE_URL=https://（あなたのプロジェクト）.supabase.co
 VITE_SUPABASE_ANON_KEY=（anon key）
-VITE_APP_PASSWORD=haizi814
+VITE_APP_PASSWORD=haizi812
 ```
 
 ローカル確認:
@@ -69,7 +69,7 @@ npm run dev
 |------|--------|
 | `VITE_SUPABASE_URL` | Project URL |
 | `VITE_SUPABASE_ANON_KEY` | anon key |
-| `VITE_APP_PASSWORD` | `haizi814` |
+| `VITE_APP_PASSWORD` | `haizi812` |
 
 2. `main` に push（または Actions で `Deploy GitHub Pages` を手動実行）
 3. GitHub の Pages 設定で `/docs` を公開（ワークフローが `docs/` を更新）
@@ -81,7 +81,16 @@ npm run dev
 ## 店舗への伝え方
 
 - URL: GitHub Pages のURL
-- パスワード: `haizi814`
+- パスワード: `haizi812`
+
+## 無料プランの注意（一時停止）
+
+Supabase 無料枠は **約1週間アクセスがないと一時停止**します。  
+対策として GitHub Actions（`keep-supabase-alive.yml`）が **毎週月・木** に自動で ping します。
+
+手動で今すぐ起こす: GitHub → Actions → **Keep Supabase awake** → Run workflow
+
+一時停止してしまったら、Supabase ダッシュボードで **プロジェクトを再開**。
 
 ---
 

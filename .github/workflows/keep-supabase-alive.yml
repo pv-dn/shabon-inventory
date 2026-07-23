@@ -1,0 +1,32 @@
+# しゃぼん玉在庫専用: Supabase 無料枠の一時停止を防ぐ
+# 他アプリのプロジェクトには触れない
+name: Keep Supabase awake
+
+on:
+  schedule:
+    # 毎週 月・木 12:00 UTC（日本時間 21:00）= 7日未満で必ず触る
+    - cron: "0 12 * * 1,4"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping shabon Supabase products
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY secrets"
+            exit 1
+          fi
+          URL="${SUPABASE_URL%/}/rest/v1/products?select=id&limit=1"
+          echo "Pinging $URL"
+          curl -fsS --max-time 60 \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Prefer: count=exact" \
+            "$URL" >/dev/null
+          echo "OK"
