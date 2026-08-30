@@ -86,6 +86,39 @@ function stockClass(p) {
   return "";
 }
 
+function useProductImageUrl(product) {
+  const [imageUrl, setImageUrl] = useState(product?.image_url || "");
+
+  useEffect(() => {
+    if (!product) {
+      setImageUrl("");
+      return;
+    }
+    if (product.image_url) {
+      setImageUrl(product.image_url);
+      return;
+    }
+    if (!product.has_image) {
+      setImageUrl("");
+      return;
+    }
+    let cancelled = false;
+    api
+      .product(product.id)
+      .then((full) => {
+        if (!cancelled) setImageUrl(full.image_url || "");
+      })
+      .catch(() => {
+        if (!cancelled) setImageUrl("");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [product?.id, product?.has_image, product?.image_url]);
+
+  return imageUrl;
+}
+
 function categoryClass(category, categories) {
   const id = category || "other";
   return categories.some((c) => c.id === id) ? `cat-${id}` : "cat-other";
@@ -1049,6 +1082,7 @@ function ProductHistoryCorner({
   bulkDeleting,
 }) {
   const selected = products.find((p) => p.id === selectedId) ?? null;
+  const selectedImageUrl = useProductImageUrl(selected);
 
   return (
     <div className="ledger-corner">
@@ -1083,13 +1117,20 @@ function ProductHistoryCorner({
         ) : (
           <>
             <header className="ledger-detail-header">
-              <div>
-                <span className="ledger-detail-code">{selected.code}</span>
-                <h2 className="ledger-detail-name">{selected.name}</h2>
-                <p className="ledger-detail-spec">
-                  {selected.spec || "—"}
-                  {selected.case_qty ? ` ／ ケース ${selected.case_qty}` : ""}
-                </p>
+              <div className="ledger-detail-title-block">
+                {selectedImageUrl ? (
+                  <div className="ledger-detail-image-wrap">
+                    <img src={selectedImageUrl} alt="" className="ledger-detail-image" />
+                  </div>
+                ) : null}
+                <div>
+                  <span className="ledger-detail-code">{selected.code}</span>
+                  <h2 className="ledger-detail-name">{selected.name}</h2>
+                  <p className="ledger-detail-spec">
+                    {selected.spec || "—"}
+                    {selected.case_qty ? ` ／ ケース ${selected.case_qty}` : ""}
+                  </p>
+                </div>
               </div>
               <div className="ledger-detail-stock">
                 <span className="ledger-detail-stock-label">現在庫</span>

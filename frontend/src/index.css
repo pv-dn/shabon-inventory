@@ -1120,6 +1120,27 @@ button, input, select {
   margin-bottom: 0.75rem;
 }
 
+.ledger-detail-title-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.ledger-detail-image-wrap {
+  flex-shrink: 0;
+}
+
+.ledger-detail-image {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
 .ledger-detail-code {
   font-size: 0.8rem;
   color: var(--muted);
