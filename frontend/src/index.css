@@ -108,10 +108,60 @@ button, input, select {
 .login-page {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: linear-gradient(145deg, var(--blue-dark), var(--blue));
   padding: 1.5rem;
+}
+
+.server-resume-help {
+  max-width: 28rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.server-resume-lead {
+  margin: 0 0 1rem;
+  opacity: 0.9;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.server-resume-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: center;
+}
+
+.server-resume-actions .btn {
+  text-decoration: none;
+}
+
+.server-resume-note {
+  margin: 0.85rem 0 0;
+  font-size: 0.82rem;
+  opacity: 0.85;
+  line-height: 1.45;
+}
+
+.server-down-banner {
+  background: #fff4e5;
+  color: #7a3e00;
+  border-bottom: 1px solid #f0c98a;
+  padding: 0.75rem 1rem 0.9rem;
+  text-align: center;
+}
+
+.server-down-banner > p {
+  margin: 0 0 0.55rem;
+  font-weight: 600;
+}
+
+.server-down-banner .server-resume-note {
+  opacity: 0.9;
+  color: #7a3e00;
 }
 
 .login-card {

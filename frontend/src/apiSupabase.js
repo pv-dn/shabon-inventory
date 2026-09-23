@@ -158,6 +158,8 @@ async function attachMovementMeta(products) {
 
 export const supabaseApi = {
   async me() {
+    // 無料枠の一時停止をログイン前に検知する
+    await sb.rest("products?select=id&limit=1");
     return {
       authenticated: isAuthenticated(),
       password_required: Boolean(APP_PASSWORD),

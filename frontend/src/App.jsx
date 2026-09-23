@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api";
 import { compressImageFile } from "./imageUtils";
+import { RESUME_ACTIONS_URL, SUPABASE_DASHBOARD_URL } from "./supabaseClient";
 
 const TYPE_LABELS = { in: "入庫", out: "出庫", adjust: "棚卸" };
 const TABS = [
@@ -84,6 +85,55 @@ function stockClass(p) {
   if (p.quantity === 0) return "zero";
   if (p.min_stock > 0 && p.quantity <= p.min_stock) return "low";
   return "";
+}
+
+function looksLikePausedError(err) {
+  const msg = String(err?.message || err || "");
+  const code = err?.code || "";
+  if (code === "SUPABASE_UNREACHABLE" || code === "SUPABASE_PAUSED") return true;
+  if (/一時停止|接続できません|起動中|Failed to fetch|NetworkError|521|503/i.test(msg)) {
+    return true;
+  }
+  return false;
+}
+
+function ServerResumeHelp({ onRetry, compact = false }) {
+  return (
+    <div className={`server-resume-help ${compact ? "compact" : ""}`}>
+      {!compact && (
+        <p className="server-resume-lead">
+          無料のクラウドDBが止まっているときは、下の「再開する」から起こせます。
+          数分待ってから再試行してください。
+        </p>
+      )}
+      <div className="server-resume-actions">
+        {onRetry && (
+          <button type="button" className="btn primary" onClick={onRetry}>
+            再試行
+          </button>
+        )}
+        <a
+          className="btn accent"
+          href={RESUME_ACTIONS_URL}
+          target="_blank"
+          rel="noreferrer"
+        >
+          再開する（GitHub）
+        </a>
+        <a
+          className="btn secondary"
+          href={SUPABASE_DASHBOARD_URL}
+          target="_blank"
+          rel="noreferrer"
+        >
+          ダッシュボード
+        </a>
+      </div>
+      <p className="server-resume-note">
+        「再開する」→ 画面右の <strong>Run workflow</strong> → 緑の Run を押す
+      </p>
+    </div>
+  );
 }
 
 function useProductImageUrl(product) {
@@ -1271,6 +1321,7 @@ export default function App() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [fetchingImages, setFetchingImages] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [serverDown, setServerDown] = useState(false);
   const [orderRequests, setOrderRequests] = useState([]);
   const [showCompletedOrders, setShowCompletedOrders] = useState(false);
   const [completingOrderId, setCompletingOrderId] = useState(null);
@@ -1336,12 +1387,14 @@ export default function App() {
     setAuthError("");
     try {
       const me = await api.me();
+      setServerDown(false);
       if (me.password_required && !me.authenticated) {
         setAuth(false);
       } else {
         setAuth(true);
       }
     } catch (err) {
+      setServerDown(looksLikePausedError(err));
       setAuthError(err.message || "サーバーに接続できません");
     }
   }, []);
@@ -1371,8 +1424,10 @@ export default function App() {
       }
       if (requestId !== loadRequestIdRef.current) return;
       setSummary(await api.summary());
+      setServerDown(false);
     } catch (err) {
       if (requestId === loadRequestIdRef.current) {
+        if (looksLikePausedError(err)) setServerDown(true);
         showToast(err.message, true);
       }
     } finally {
@@ -1560,12 +1615,7 @@ export default function App() {
         {authError ? (
           <>
             <p style={{ marginBottom: "1rem" }}>{authError}</p>
-            <p style={{ marginBottom: "1rem", opacity: 0.85, fontSize: "0.95rem" }}>
-              クラウド版はしばらく使っていないと起動に30秒ほどかかることがあります。
-            </p>
-            <button type="button" className="btn btn-primary" onClick={checkAuth}>
-              再試行
-            </button>
+            <ServerResumeHelp onRetry={checkAuth} />
           </>
         ) : (
           "読み込み中…"
@@ -1581,6 +1631,12 @@ export default function App() {
   return (
     <>
       <div className="app-shell">
+      {serverDown && (
+        <div className="server-down-banner">
+          <p>データサーバーに接続できません（一時停止の可能性）。</p>
+          <ServerResumeHelp compact onRetry={loadData} />
+        </div>
+      )}
       <header className="header">
         <div className="header-inner">
           <h1 className="brand-title">シャボン玉石けん 在庫管理</h1>

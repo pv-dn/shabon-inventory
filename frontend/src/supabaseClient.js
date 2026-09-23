@@ -8,6 +8,25 @@ const key = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
 export const isSupabaseMode = Boolean(url && key);
 export const APP_PASSWORD = (import.meta.env.VITE_APP_PASSWORD || "").trim();
 
+/** 例: ysosdljvkakjjhcogwbm（一時停止時のダッシュボードリンク用） */
+export const SUPABASE_PROJECT_REF = (() => {
+  try {
+    if (!url) return "";
+    const host = new URL(url).hostname;
+    return host.replace(/\.supabase\.co$/i, "") || "";
+  } catch {
+    return "";
+  }
+})();
+
+export const SUPABASE_DASHBOARD_URL = SUPABASE_PROJECT_REF
+  ? `https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}`
+  : "https://supabase.com/dashboard";
+
+/** GitHub Actions の Resume ワークフロー（Run workflow で再開） */
+export const RESUME_ACTIONS_URL =
+  "https://github.com/pv-dn/shabon-inventory/actions/workflows/resume-supabase.yml";
+
 const AUTH_KEY = "shabon_inventory_auth";
 
 export function isAuthenticated() {
@@ -31,11 +50,20 @@ async function rest(path, { method = "GET", body, headers = {}, prefer } = {}) {
     h["Content-Type"] = "application/json";
     if (!h.Prefer) h.Prefer = "return=representation";
   }
-  const res = await fetch(`${url}/rest/v1/${path}`, {
-    method,
-    headers: h,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  let res;
+  try {
+    res = await fetch(`${url}/rest/v1/${path}`, {
+      method,
+      headers: h,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    const err = new Error(
+      "データサーバーに接続できません。無料枠の一時停止の可能性があります。"
+    );
+    err.code = "SUPABASE_UNREACHABLE";
+    throw err;
+  }
   const text = await res.text();
   let data = null;
   if (text) {
@@ -46,6 +74,14 @@ async function rest(path, { method = "GET", body, headers = {}, prefer } = {}) {
     }
   }
   if (!res.ok) {
+    if (res.status === 521 || res.status === 503 || res.status === 546) {
+      const err = new Error(
+        "データサーバーが起動中または一時停止しています。少し待つか再開してください。"
+      );
+      err.status = res.status;
+      err.code = "SUPABASE_PAUSED";
+      throw err;
+    }
     const msg =
       (data && (data.message || data.error || data.hint)) ||
       (typeof data === "string" ? data : `Supabaseエラー (${res.status})`);

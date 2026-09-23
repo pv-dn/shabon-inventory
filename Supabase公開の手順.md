@@ -85,12 +85,36 @@ npm run dev
 
 ## 無料プランの注意（一時停止）
 
-Supabase 無料枠は **約1週間アクセスがないと一時停止**します。  
-対策として GitHub Actions（`keep-supabase-alive.yml`）が **毎週月・木** に自動で ping します。
+Supabase 無料枠は **約1週間アクセスがないと一時停止**します。データは消えません。
 
-手動で今すぐ起こす: GitHub → Actions → **Keep Supabase awake** → Run workflow
+### 自動対策（推奨）
 
-一時停止してしまったら、Supabase ダッシュボードで **プロジェクトを再開**。
+GitHub Actions（`keep-supabase-alive.yml`）が **毎日** ping します。  
+停止を検知すると Management API で **自動 Resume** します（要: 下記トークン）。
+
+### 手動再開（アプリからも）
+
+アプリ接続エラー時に **「再開する（GitHub）」** が出ます。
+
+1. ボタンで Actions を開く  
+2. 右の **Run workflow** → 緑の **Run workflow**  
+3. 数分待ってアプリで **再試行**
+
+ダッシュボードで Resume しても同じです。
+
+### 初回だけ: Access Token を GitHub に登録
+
+自動 Resume / 手動 Resume の両方に必要です。
+
+1. https://supabase.com/dashboard/account/tokens でトークン作成（名前例: `shabon-resume`）
+2. リポジトリ `shabon-inventory` → **Settings → Secrets and variables → Actions**
+3. New secret:
+   - Name: `SUPABASE_ACCESS_TOKEN`
+   - Value: 作成したトークン
+
+※ トークンはアプリ本体には埋め込みません（GitHub Actions 内だけ）。
+
+手動で今すぐ起こす: Actions → **Resume Supabase** または **Keep Supabase awake** → Run workflow
 
 ---
 
