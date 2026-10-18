@@ -1,12 +1,16 @@
-シャボン玉石けん在庫管理 — アプリのURL
+﻿シャボン玉石けん在庫管理 — アプリのURL
 ================================
 
-■ 店舗共有用（本番・おすすめ）
+■ 店舗共有用（本番）★これを使う
   https://pv-dn.github.io/shabon-inventory/
-  ※ Supabase公開の手順.md を完了後に有効
 
 ■ ログインパスワード
-  haizi814
+  haizi812
+
+■ データ（しゃぼん玉専用 Supabase）
+  https://ysosdljvkakjjhcogwbm.supabase.co
+  プロジェクト名: シャボン在庫（組織: シャボン）
+  ※ プゥルヴー在庫など他アプリのプロジェクトは使わない
 
 ■ このPCで使う（起動.bat・Flaskローカル）
   http://127.0.0.1:5050
@@ -14,11 +18,6 @@
 ■ GitHub（ソース）
   https://github.com/pv-dn/shabon-inventory
 
-■ データ（しゃぼん玉専用 Supabase）
-  https://ysosdljvkakjjhcogwbm.supabase.co
-  プロジェクト名: シャボン在庫（組織: シャボン）
-  ※ プゥルヴー在庫など他アプリのプロジェクトは使わない
-
-■ 旧URL（非推奨）
+■ 使わないURL
   https://shabon-inventory.onrender.com  … Renderは使わない
   https://shabon-inventory.fly.dev       … 有料のため見送り

@@ -1,4 +1,4 @@
-# Render.com - 旧デプロイ用（新規は Fly.io を使う）
+﻿# Render.com - 旧デプロイ用（新規は Fly.io を使う）
 # 参照のみ。本番は fly.toml + Neon。
 
 services:
@@ -15,7 +15,7 @@ services:
       - key: RENDER
         value: "true"
       - key: APP_PASSWORD
-        value: "haizi814"
+        value: "haizi812"
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL

@@ -1,4 +1,4 @@
-# Fly.io secrets 設定ヘルパー
+﻿# Fly.io secrets 設定ヘルパー
 # Neon の Connection string を用意してから実行してください。
 #
 # 使い方:
@@ -18,7 +18,7 @@ if (-not (Get-Command flyctl -ErrorAction SilentlyContinue)) {
 }
 
 $appName = "shabon-inventory"
-$appPassword = "haizi814"
+$appPassword = "haizi812"
 
 flyctl auth whoami 2>$null
 if ($LASTEXITCODE -ne 0) {

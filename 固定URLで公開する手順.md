@@ -1,4 +1,4 @@
-# 固定URLで公開する手順（PCをサーバーにしない）
+﻿# 固定URLで公開する手順（PCをサーバーにしない）
 
 本番は **Fly.io（クラウド）+ Neon（無料DB）** です。  
 **あなたのPCは電源を切って大丈夫**です。
@@ -77,7 +77,7 @@ powershell -File scripts\migrate_db_to_neon.ps1
 powershell -File scripts\set_fly_secrets.ps1
 ```
 
-（`APP_PASSWORD=haizi814` / `DATABASE_URL` / `SECRET_KEY` が登録されます）
+（`APP_PASSWORD=haizi812` / `DATABASE_URL` / `SECRET_KEY` が登録されます）
 
 3. デプロイ:
 
@@ -96,7 +96,7 @@ flyctl deploy -a shabon-inventory --remote-only
 ## ステップ5: 動作確認
 
 1. 固定URLをブラウザで開く
-2. パスワード画面 → **`haizi814`** でログイン
+2. パスワード画面 → **`haizi812`** でログイン
 3. 品目が表示されればOK
 
 ---
@@ -140,6 +140,6 @@ Fly でログイン・在庫確認ができたら:
 | 症状 | 対処 |
 |------|------|
 | 502 / 起動しない | `flyctl logs -a shabon-inventory` |
-| ログインできない | `APP_PASSWORD` が `haizi814` か `flyctl secrets list -a shabon-inventory` で確認 |
+| ログインできない | `APP_PASSWORD` が `haizi812` か `flyctl secrets list -a shabon-inventory` で確認 |
 | 品目が空 | Neon 接続と `data/products.json` を確認 → 再デプロイ |
 | 旧 Render URL が遅い | Fly の新URLに切り替える |

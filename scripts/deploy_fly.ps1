@@ -1,4 +1,4 @@
-# GitHub push + Fly.io deploy
+﻿# GitHub push + Fly.io deploy
 # 事前: flyctl auth login / Neon の DATABASE_URL
 $AppDir = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $AppDir
@@ -62,7 +62,7 @@ if (-not $exists) {
 }
 
 $passwordFile = Join-Path $AppDir "deploy-password.txt"
-$appPassword = "haizi814"
+$appPassword = "haizi812"
 if (Test-Path $passwordFile) {
     $raw = Get-Content $passwordFile -Raw -Encoding utf8
     if ($raw -match "パスワード:\s*(\S+)") { $appPassword = $Matches[1].Trim() }

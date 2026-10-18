@@ -1,12 +1,17 @@
 {
   "name": "shabon-inventory-ui",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "description": "しゃぼん玉石けん 在庫管理",
+  "author": "pv-dn",
+  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron:dev": "electron .",
+    "electron:build": "electron-builder --win"
   },
   "dependencies": {
     "react": "^19.0.0",
@@ -14,6 +19,41 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^36.2.0",
+    "electron-builder": "^26.0.12",
     "vite": "^6.0.0"
+  },
+  "build": {
+    "appId": "com.pv-dn.shabon-inventory",
+    "productName": "しゃぼん玉在庫管理",
+    "copyright": "Copyright © pv-dn",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "electron/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "しゃぼん玉在庫管理",
+      "installerIcon": "electron/icon.ico",
+      "uninstallerIcon": "electron/icon.ico",
+      "artifactName": "ShabonInventorySetup-${version}.exe"
+    }
   }
 }
